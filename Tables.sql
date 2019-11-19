@@ -8,19 +8,28 @@ CREATE TABLE Vehicle (
     year CHAR(4),
     color CHAR(20),
     odometer INT,
+    gasTypeID INT,
     statusID INT, --FK to Status table
     vtname CHAR(32),
     location CHAR(50),
     city CHAR(32),
+    reserved BIT
 
     FOREIGN KEY (vtname) REFERENCES VehicleType(vtname),
-    FOREIGN KEY (status) REFERENCES Status(statusID)
+    FOREIGN KEY (status) REFERENCES Status(statusID),
+    FOREIGN KEY (gasTypeID) REFERENCES GasType(gasTypeId)
 )
 
 -- Codeset for status 1=Rented, 2=Maintenance, 3=Available
 CREATE TABLE Status(
     statusID INT PRIMARY KEY,
     status CHAR(20)
+)
+
+-- Codeset for gasType 1=Gasoline, 2=Hybrid, 3=Electric
+CREATE TABLE GasType(
+    gasTypeID INT PRIMARY KEY,
+    gasType CHAR(32)
 )
 
 CREATE TABLE VehicleTypes(
@@ -46,12 +55,14 @@ CREATE TABLE Customer(
 CREATE TABLE Reservations(
     confNo INT IDENTITY(1,1) PRIMARY KEY,
     vtname CHAR(32),
+    vlicense CHAR(32),
     dlicense CHAR(20),
     fromDateTime DATETIME,
     toDateTime DATETIME,
 
     FOREIGN KEY (vtname) REFERENCES VehicleType(vtname),
-    FOREIGN KEY (dlicense) REFERENCES Customer(dlicense)
+    FOREIGN KEY (dlicense) REFERENCES Customer(dlicense),
+    FOREIGN KEY (vlicense) REFERENCES Vehicle(vlicense)
 )
 
 CREATE TABLE Rent(

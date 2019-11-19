@@ -45,8 +45,9 @@ SELECT @vtnamep = vtname, @fromDatep = fromDateTime, @toDatep = toDateTime
 FROM Rent
 WHERE rid = inputRid
 
-EXECUTE CalculateValue @vtname = @vtnamep, @fromDate = @fromDatep, @toDate = @toDatep, @value out, @howCalculate out
-SELECT @valuep = @value, @howCalculatep = @howCaluclate;
+-- EXECUTE CalculateValue @vtname = @vtnamep, @fromDate = @fromDatep, @toDate = @toDatep, @value out, @howCalculate out
+-- SELECT @valuep = @value, @howCalculatep = @howCaluclate;
+-- Just use CalculateValueSP.sql
 
 INSERT INTO [Return](dateTime, odometer, fullTank, value)  
 OUTPUT (

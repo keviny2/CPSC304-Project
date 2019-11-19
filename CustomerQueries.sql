@@ -9,18 +9,15 @@
 --  details should be displayed).  
 SELECT *, COUNT(DISTINCT vlicense)
 FROM Vehicle v
-WHERE inputCarType = v.vtname AND v.location = inputLocation AND v.vlicense IN  
+WHERE inputCarType = v.vtname AND v.location = inputLocation AND v.reserved = 0 AND v.vlicense IN  
 --Assuming carType is passed in by user and contains things like make, model, year of car
 (SELECT vlicense
 FROM Vehicle
 EXCEPT
 (SELECT vlicense
-FROM Reservations
-WHERE timeInterval BETWEEN fromDateTime AND toDateTime
-UNION
-SELECT vlicense
 FROM Rent
 WHERE timeInterval BETWEEN fromDateTime AND toDateTime))
+ORDER BY v.vtname
 
 -- Make a reservation. If a customer is new, add the customer’s details to the database. 
 -- (You may choose to have a different interface for this).    
@@ -36,11 +33,21 @@ INSERT INTO Customer(dlicense, cellphone, name, address)
 VALUES (inputDlicense, inputCellPhone, inputName, inputAddress)
 
 -- Make reservation
+DECLARE @hybridOrElectric BIT
+DECLARE @reservedVlicense CHAR(32)
+UPDATE TOP (1) Vehicle 
+SET reserved = 1,
+    @hybridOrElectric = (SELECT CASE WHEN inserted.gasTypeID = 1 THEN 0 ELSE 1 END),
+    @reservedVlicense = inserted.vlicense
+WHERE vtname = inputVtname AND reserved = 0
+
 DECLARE @CostEstimation INT
-SET @CostEstimation = -- can use
-INSERT INTO Reservations(vtname, fromDateTime, toDateTime)
-OUTPUT Inserted.confNo, Inserted.vtname, Inserted.fromDateTime, Inserted.toDateTime
-VALUES (inputVtname, inputFromDateTime, inputToDateTime)
+SET @CostEstimation = 5 -- Use CalculateValueSP
+IF @hybridOrElectric = 1 
+    SET @CostEstimation = @CostEstimation + 30
+INSERT INTO Reservations(vtname, vlicense, fromDateTime, toDateTime)
+OUTPUT Inserted.confNo, Inserted.vtname, Inserted.vlicense, Inserted.fromDateTime, Inserted.toDateTime, @CostEstimation
+VALUES (inputVtname, @reservedVlicense, inputFromDateTime, inputToDateTime)
 
 -- IsVehicleAvailable
 -- Can use query above
