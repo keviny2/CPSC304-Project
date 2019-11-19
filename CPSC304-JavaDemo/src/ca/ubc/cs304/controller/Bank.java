@@ -1,26 +1,35 @@
 package ca.ubc.cs304.controller;
 
 import ca.ubc.cs304.database.DatabaseConnectionHandler;
+import ca.ubc.cs304.delegates.AvailableVehiclesDelegate;
 import ca.ubc.cs304.delegates.LoginWindowDelegate;
 import ca.ubc.cs304.delegates.TerminalTransactionsDelegate;
 import ca.ubc.cs304.model.BranchModel;
 import ca.ubc.cs304.ui.LoginWindow;
 import ca.ubc.cs304.ui.TerminalTransactions;
+import ca.ubc.cs304.ui.AvailableVehiclesWindow;
 
 /**
  * This is the main controller class that will orchestrate everything.
  */
-public class Bank implements LoginWindowDelegate, TerminalTransactionsDelegate {
+public class Bank implements LoginWindowDelegate, TerminalTransactionsDelegate, AvailableVehiclesDelegate {
 	private DatabaseConnectionHandler dbHandler = null;
 	private LoginWindow loginWindow = null;
+	private AvailableVehiclesWindow availableVehiclesWindow = null;
 
 	public Bank() {
 		dbHandler = new DatabaseConnectionHandler();
 	}
 	
 	private void start() {
-		loginWindow = new LoginWindow();
-		loginWindow.showFrame(this);
+//		loginWindow = new LoginWindow();
+//		loginWindow.showFrame(this);
+		availableVehiclesWindow = new AvailableVehiclesWindow();
+		availableVehiclesWindow.showFrame(this);
+	}
+
+	public void find(String carType, String location, int timeInterval) {
+		System.out.println(timeInterval);
 	}
 	
 	/**

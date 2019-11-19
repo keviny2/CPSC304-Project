@@ -1,5 +1,8 @@
 package ca.ubc.cs304.delegates;
 
+import javax.swing.*;
+import java.awt.event.ActionListener;
+
 /**
  * This interface uses the delegation design pattern where instead of having
  * the LoginWindow class try to do everything, it will only focus on
