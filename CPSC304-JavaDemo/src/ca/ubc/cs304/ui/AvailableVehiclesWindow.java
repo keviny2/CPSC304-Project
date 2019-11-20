@@ -6,8 +6,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 
 import ca.ubc.cs304.ui.utils.VehicleTypeNames;
 
@@ -32,8 +30,8 @@ public class AvailableVehiclesWindow extends JFrame implements ActionListener {
         // declare all labels here
         JLabel vehicleTypeLabel = new JLabel("Vehicle Type: ");
         JLabel locationLabel = new JLabel("Location: ");
-        JLabel fromDateTimeLabel = new JLabel("From date: ");
-        JLabel toDateTimeLabel = new JLabel("To date: ");
+        JLabel fromDateTimeLabel = new JLabel("From date & time: ");
+        JLabel toDateTimeLabel = new JLabel("To date & time: ");
         // label for number of available vehicles
         JLabel NOACLabel = new JLabel("Available vehicles: ");
         JLabel clickNOACLabel = new JLabel("Click the above number for detail");
@@ -81,6 +79,7 @@ public class AvailableVehiclesWindow extends JFrame implements ActionListener {
 
         c.gridwidth = GridBagConstraints.RELATIVE;
         c.insets = new Insets(15, 10, 10, 0);
+        c.anchor = GridBagConstraints.WEST;
         gb.setConstraints(vehicleTypeLabel, c);
         contentPane.add(vehicleTypeLabel);
 
@@ -105,17 +104,17 @@ public class AvailableVehiclesWindow extends JFrame implements ActionListener {
         contentPane.add(fromDateTimeLabel);
 
         c.gridwidth = GridBagConstraints.REMAINDER;
-        c.insets = new Insets(10, 0, 5, 0);
+        c.insets = new Insets(10, 0, 10, 0);
         gb.setConstraints(fromDateTimeField, c);
         contentPane.add(fromDateTimeField);
 
         c.gridwidth = GridBagConstraints.REMAINDER;
-        c.insets = new Insets(0, 125, 0, 0);
+        c.insets = new Insets(0, 160, 0, 0);
         gb.setConstraints(dateFormatLabel, c);
         contentPane.add(dateFormatLabel);
 
         c.gridwidth = GridBagConstraints.RELATIVE;
-        c.insets = new Insets(5, 10, 10, 0);
+        c.insets = new Insets(10, 10, 10, 0);
         gb.setConstraints(toDateTimeLabel, c);
         contentPane.add(toDateTimeLabel);
 
@@ -137,12 +136,12 @@ public class AvailableVehiclesWindow extends JFrame implements ActionListener {
         NOACNumber.setActionCommand("details");
         NOACNumber.addActionListener(this);
 
-        // anonymous inner class for closing the window
-        this.addWindowListener(new WindowAdapter() {
-            public void windowClosing(WindowEvent e) {
-                System.exit(0);
-            }
-        });
+//        // anonymous inner class for closing the window
+//        this.addWindowListener(new WindowAdapter() {
+//            public void windowClosing(WindowEvent e) {
+//                System.exit(0);
+//            }
+//        });
 
         // size the window to obtain a best fit for the components
         this.pack();
@@ -161,9 +160,9 @@ public class AvailableVehiclesWindow extends JFrame implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (e.getActionCommand() == "find") {
+        if (e.getActionCommand().equals("find")) {
             NOACNumber.setText(delegate.find((String) vehicleTypeComboBox.getSelectedItem(), locationField.getText(), fromDateTimeField.getText(), toDateTimeField.getText()));
-        } else if (e.getActionCommand() == "details") {
+        } else if (e.getActionCommand().equals("details")) {
             delegate.details((String) vehicleTypeComboBox.getSelectedItem(), locationField.getText(), fromDateTimeField.getText(), toDateTimeField.getText());
         }
     }

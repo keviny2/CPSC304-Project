@@ -21,7 +21,6 @@ public class AvailableVehicles implements AvailableVehiclesDelegate {
 		availableVehiclesWindow = new AvailableVehiclesWindow();
 		availableVehiclesWindow.setResizable(false);
 		availableVehiclesWindow.showFrame(this);
-		availableVehiclesWindow.getContentPane().getComponent(1).setName("10");
 	}
 
 	public String find(String vehicleType, String location, String fromDate, String toDate) {
