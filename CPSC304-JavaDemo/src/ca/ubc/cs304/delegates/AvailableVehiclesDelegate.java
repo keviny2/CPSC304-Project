@@ -4,5 +4,7 @@ import javax.swing.*;
 import java.awt.event.ActionListener;
 
 public interface AvailableVehiclesDelegate {
-    void find (String carType, String location, int timeInterval);
+    String find (String vehicleType, String location, String fromDate, String toDate);
+
+    void details (String vehicleType, String location, String fromDate, String toDate);
 }

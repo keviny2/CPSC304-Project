@@ -9,13 +9,16 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
-public class AvailableVehiclesWindow extends JFrame implements ActionListener {
-    private static final int TEXT_FIELD_WIDTH = 7;
+import ca.ubc.cs304.ui.utils.VehicleTypeNames;
 
-    private JTextField vehicleTypeField;
+public class AvailableVehiclesWindow extends JFrame implements ActionListener {
+
+    private JComboBox vehicleTypeComboBox;
     private JTextField locationField;
-    private JTextField timeIntervalField;
+    private JTextField fromDateTimeField;
+    private JTextField toDateTimeField;
     private JButton NOACNumber;
+    private VehicleTypeNames vtNames = new VehicleTypeNames();
 
     private AvailableVehiclesDelegate delegate;
 
@@ -26,18 +29,26 @@ public class AvailableVehiclesWindow extends JFrame implements ActionListener {
     public void showFrame(AvailableVehiclesDelegate delegate) {
         this.delegate = delegate;
 
+        // declare all labels here
         JLabel vehicleTypeLabel = new JLabel("Vehicle Type: ");
         JLabel locationLabel = new JLabel("Location: ");
-        JLabel timeIntervalLabel = new JLabel("Time Interval: ");
+        JLabel fromDateTimeLabel = new JLabel("From date: ");
+        JLabel toDateTimeLabel = new JLabel("To date: ");
         // label for number of available vehicles
         JLabel NOACLabel = new JLabel("Available vehicles: ");
-        JLabel clickNOACLabel = new JLabel("Click the above number for details");
+        JLabel clickNOACLabel = new JLabel("Click the above number for detail");
         clickNOACLabel.setFont(new Font(NOACLabel.getFont().getFontName(), Font.ITALIC, (int)(NOACLabel.getFont().getSize()*0.8)));
         clickNOACLabel.setForeground(Color.DARK_GRAY);
+        JLabel dateFormatLabel = new JLabel(" yyyy-mm-dd ");
+        dateFormatLabel.setFont(new Font(NOACLabel.getFont().getFontName(), Font.ITALIC, (int)(NOACLabel.getFont().getSize()*0.8)));
+        dateFormatLabel.setForeground(Color.DARK_GRAY);
 
-        vehicleTypeField = new JTextField(TEXT_FIELD_WIDTH);
-        locationField = new JTextField(TEXT_FIELD_WIDTH);
-        timeIntervalField = new JTextField(TEXT_FIELD_WIDTH);
+        // declares all Swing input objects here
+        vehicleTypeComboBox = new JComboBox(vtNames.getNames());
+        vehicleTypeComboBox.setSelectedItem(null);
+        locationField = new JTextField(10);
+        fromDateTimeField = new JTextField(10);
+        toDateTimeField = new JTextField(10);
         NOACNumber = new JButton("0");
 
         JButton findButton = new JButton("Find");
@@ -52,6 +63,7 @@ public class AvailableVehiclesWindow extends JFrame implements ActionListener {
         contentPane.setLayout(gb);
         contentPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
+        // set the grid specs for all labels and objects
         c.gridwidth = GridBagConstraints.RELATIVE;
         c.insets = new Insets(10, 10, 10, 0);
         gb.setConstraints(NOACLabel, c);
@@ -63,7 +75,7 @@ public class AvailableVehiclesWindow extends JFrame implements ActionListener {
         contentPane.add(NOACNumber);
 
         c.gridwidth = GridBagConstraints.REMAINDER;
-        c.insets = new Insets(0, 10, 10, 0);
+        c.insets = new Insets(0, 10, 20, 0);
         gb.setConstraints(clickNOACLabel, c);
         contentPane.add(clickNOACLabel);
 
@@ -74,8 +86,8 @@ public class AvailableVehiclesWindow extends JFrame implements ActionListener {
 
         c.gridwidth = GridBagConstraints.REMAINDER;
         c.insets = new Insets(15, 0, 10, 0);
-        gb.setConstraints(vehicleTypeField, c);
-        contentPane.add(vehicleTypeField);
+        gb.setConstraints(vehicleTypeComboBox, c);
+        contentPane.add(vehicleTypeComboBox);
 
         c.gridwidth = GridBagConstraints.RELATIVE;
         c.insets = new Insets(10, 10, 10, 0);
@@ -89,13 +101,28 @@ public class AvailableVehiclesWindow extends JFrame implements ActionListener {
 
         c.gridwidth = GridBagConstraints.RELATIVE;
         c.insets = new Insets(10, 10, 10, 0);
-        gb.setConstraints(timeIntervalLabel, c);
-        contentPane.add(timeIntervalLabel);
+        gb.setConstraints(fromDateTimeLabel, c);
+        contentPane.add(fromDateTimeLabel);
+
+        c.gridwidth = GridBagConstraints.REMAINDER;
+        c.insets = new Insets(10, 0, 5, 0);
+        gb.setConstraints(fromDateTimeField, c);
+        contentPane.add(fromDateTimeField);
+
+        c.gridwidth = GridBagConstraints.REMAINDER;
+        c.insets = new Insets(0, 125, 0, 0);
+        gb.setConstraints(dateFormatLabel, c);
+        contentPane.add(dateFormatLabel);
+
+        c.gridwidth = GridBagConstraints.RELATIVE;
+        c.insets = new Insets(5, 10, 10, 0);
+        gb.setConstraints(toDateTimeLabel, c);
+        contentPane.add(toDateTimeLabel);
 
         c.gridwidth = GridBagConstraints.REMAINDER;
         c.insets = new Insets(10, 0, 10, 0);
-        gb.setConstraints(timeIntervalField, c);
-        contentPane.add(timeIntervalField);
+        gb.setConstraints(toDateTimeField, c);
+        contentPane.add(toDateTimeField);
 
         // place the find button
         c.gridwidth = GridBagConstraints.REMAINDER;
@@ -104,8 +131,11 @@ public class AvailableVehiclesWindow extends JFrame implements ActionListener {
         gb.setConstraints(findButton, c);
         contentPane.add(findButton);
 
-        // register login button with action event handler
+        // register objects with action event handler
+        findButton.setActionCommand("find");
         findButton.addActionListener(this);
+        NOACNumber.setActionCommand("details");
+        NOACNumber.addActionListener(this);
 
         // anonymous inner class for closing the window
         this.addWindowListener(new WindowAdapter() {
@@ -126,11 +156,15 @@ public class AvailableVehiclesWindow extends JFrame implements ActionListener {
         this.setVisible(true);
 
         // place the cursor in the text field for the username
-        vehicleTypeField.requestFocus();
+        vehicleTypeComboBox.requestFocus();
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        delegate.find(vehicleTypeField.getText(), locationField.getText(), Integer.parseInt(timeIntervalField.getText()));
+        if (e.getActionCommand() == "find") {
+            NOACNumber.setText(delegate.find((String) vehicleTypeComboBox.getSelectedItem(), locationField.getText(), fromDateTimeField.getText(), toDateTimeField.getText()));
+        } else if (e.getActionCommand() == "details") {
+            delegate.details((String) vehicleTypeComboBox.getSelectedItem(), locationField.getText(), fromDateTimeField.getText(), toDateTimeField.getText());
+        }
     }
 }
