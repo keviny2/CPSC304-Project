@@ -60,7 +60,7 @@ public class AvailableVehicles implements AvailableVehiclesDelegate {
 			criteria.add("location = \'" + location + "\'");
 		}
 		String[][] data = dbHandler.getVehicles(criteria);
-		if (data[0][0] == "") {
+		if (data.length == 0 || data[0].length == 0 || data[0][0] == "") {
 			JOptionPane.showMessageDialog(new JFrame(), "Invalid query", "Error", JOptionPane.ERROR_MESSAGE);
 		}
 		// String[][] data = { { "Honda", "Civic", "2018", "Blue", "Regular", "Standard" }, { "Honda", "CRV", "2012", "Black", "Regular", "SUV" } };

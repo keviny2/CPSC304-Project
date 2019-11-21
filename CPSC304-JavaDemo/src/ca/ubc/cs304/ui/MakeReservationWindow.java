@@ -184,7 +184,8 @@ public class MakeReservationWindow extends JFrame implements ActionListener {
                                 if (!customerNameField.getText().trim().equals("")) {
                                     if (!customerDLField.getText().trim().equals("")) {
                                         // displays success message with conf num from what reserve func returns
-                                        int confNum = delegate.reserve(locationField.getText(), (String) vehicleTypeComboBox.getSelectedItem(), fromDateTimeField.getText(), toDateTimeField.getText(), customerNameField.getText(), Long.parseLong(customerDLField.getText()));
+                                        Integer confNum;
+                                        delegate.reserve(locationField.getText(), (String) vehicleTypeComboBox.getSelectedItem(), fromDateTimeField.getText(), toDateTimeField.getText(), customerNameField.getText(), Long.parseLong(customerDLField.getText()));
                                         JOptionPane.showMessageDialog(new JFrame(), "You have reserved a vehicle!\n\nHere is your confirmation number: " + confNum, "Success", JOptionPane.INFORMATION_MESSAGE);
                                         // this.dispose();
                                     } else JOptionPane.showMessageDialog(new JFrame(), "Please enter your driver's license #", "Error", JOptionPane.ERROR_MESSAGE);

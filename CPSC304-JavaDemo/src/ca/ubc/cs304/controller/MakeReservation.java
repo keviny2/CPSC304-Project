@@ -6,6 +6,7 @@ import ca.ubc.cs304.ui.MakeReservationWindow;
 
 import javax.swing.*;
 import java.sql.Date;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Objects;
 
@@ -23,7 +24,7 @@ public class MakeReservation implements MakeReservationDelegate {
         makeReservationWindow.showFrame(this);
     }
 
-    public int reserve(String location, String vehicleType, String fromDateTime, String toDateTime, String customerName, long customerDL) {
+    public boolean reserve(String location, String vehicleType, String fromDateTime, String toDateTime, String customerName, long customerDL) throws SQLException {
         // if reservation didn't go through return -1
         ArrayList<String> criteria = new ArrayList<>();
         criteria.add("vtname = \'" + vehicleType + "\'");
@@ -31,7 +32,9 @@ public class MakeReservation implements MakeReservationDelegate {
 
         String result = dbHandler.findVehicles(criteria);
         if (result == "") {
-            return -1;
+            throw new SQLException("Invalid query.")
+        } else if (result == "0") {
+            throw new SQLException("No vehicles matching criteria found.");
         }
         Date fromDate = Date.valueOf(fromDateTime);
         Date toDate = Date.valueOf(toDateTime);
