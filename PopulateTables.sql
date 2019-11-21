@@ -3,7 +3,7 @@ INSERT INTO Vehicle([vid],[vlicense],[make],[model],[year],[color],[odometer],[g
 
 -- Status
 INSERT INTO Status(statusID, status)
-VALUES (1, "Rented"),(2, "Maintenance"),(3, "Available")
+VALUES (1, "Rented"),(2, "Maintenance"), (3, "Available")
 
 -- GasType
 INSERT INTO GasType(gasTypeID, gasType)
@@ -12,7 +12,7 @@ VALUES (1, "Gasoline"), (2, "Hybrid"), (3, "Electric")
 -- VehicleType
 INSERT INTO VehicleTypes(vtname, features, wrate, drate, hrate, wirate, dirate, hirate, krate)
 VALUES 
-("Economy", "EconomyFeature", 1, 1, 2, 1, 1, 1, 3), 
+("Economy", "EconomyFeature", 1, 1, 2, 1, 1, 1, 3),
 ("Compact", "CompactFeature", 1, 1, 2, 1, 1, 1, 3),
 ("Mid-size", "Mid-sizeFeature", 1, 1, 2, 1, 1, 1, 3),
 ("Standard", "StandardFeature", 1, 1, 2, 1, 1, 1, 3),

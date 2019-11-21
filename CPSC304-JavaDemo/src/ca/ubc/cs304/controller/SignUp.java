@@ -8,8 +8,8 @@ public class SignUp implements SignUpDelegate {
     private DatabaseConnectionHandler dbHandler = null;
     private SignUpWindow signUpWindow = null;
 
-    public SignUp() {
-        dbHandler = new DatabaseConnectionHandler();
+    public SignUp(DatabaseConnectionHandler dbHandler) {
+        this.dbHandler = dbHandler;
     }
 
     public void start() {

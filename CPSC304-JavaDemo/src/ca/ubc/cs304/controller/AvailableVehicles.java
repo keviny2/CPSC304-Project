@@ -5,16 +5,17 @@ import ca.ubc.cs304.delegates.AvailableVehiclesDelegate;
 import ca.ubc.cs304.ui.AvailableVehiclesWindow;
 
 import javax.swing.*;
+import java.util.ArrayList;
 
 /**
  * This is the main controller class that will orchestrate everything.
  */
 public class AvailableVehicles implements AvailableVehiclesDelegate {
-	private DatabaseConnectionHandler dbHandler = null;
+	private DatabaseConnectionHandler dbHandler;
 	private AvailableVehiclesWindow availableVehiclesWindow = null;
 
-	public AvailableVehicles() {
-		dbHandler = new DatabaseConnectionHandler();
+	public AvailableVehicles(DatabaseConnectionHandler dbHandler) {
+		this.dbHandler = dbHandler;
 	}
 	
 	public void start() {
@@ -26,7 +27,18 @@ public class AvailableVehicles implements AvailableVehiclesDelegate {
 	public String find(String vehicleType, String location, String fromDate, String toDate) {
 		// show number of vehicles of above spec
 		// if all empty/null, then display # of all available vehicles
-		return "10";
+		ArrayList<String> criteria = new ArrayList<>();
+		if (vehicleType != null && !vehicleType.trim().equals("")) {
+			criteria.add("vtname = " + vehicleType);
+		}
+		if (location != null && !location.trim().equals("")) {
+			criteria.add("location = " + location);
+		}
+		String result = dbHandler.findVehicles(criteria);
+		if (result == "") {
+			JOptionPane.showMessageDialog(new JFrame(), "Invalid query", "Error", JOptionPane.ERROR_MESSAGE);
+		}
+		return result;
 	}
 
 	public void details(String vehicleType, String location, String fromDate, String toDate) {
@@ -40,7 +52,18 @@ public class AvailableVehicles implements AvailableVehiclesDelegate {
 
 		// replace the data array below with sql queries
 		String[] columnNames = { "Make", "Model", "Year", "Color", "Gas Type", "Vehicle Type" };
-		String[][] data = { { "Honda", "Civic", "2018", "Blue", "Regular", "Standard" }, { "Honda", "CRV", "2012", "Black", "Regular", "SUV" } };
+		ArrayList<String> criteria = new ArrayList<>();
+		if (vehicleType != null) {
+			criteria.add("vtname = " + vehicleType);
+		}
+		if (location != null) {
+			criteria.add("location = " + location);
+		}
+		String[][] data = dbHandler.getVehicles(criteria);
+		if (data[0][0] == "") {
+			JOptionPane.showMessageDialog(new JFrame(), "Invalid query", "Error", JOptionPane.ERROR_MESSAGE);
+		}
+		// String[][] data = { { "Honda", "Civic", "2018", "Blue", "Regular", "Standard" }, { "Honda", "CRV", "2012", "Black", "Regular", "SUV" } };
 
 		// create new table with above data
 		JTable table = new JTable(data, columnNames);
