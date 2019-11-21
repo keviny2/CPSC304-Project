@@ -3,17 +3,17 @@
 CREATE TABLE Vehicle (
     vid INT UNIQUE,
     vlicense CHAR(32) IDENTITY(1,1) PRIMARY KEY,
-    make CHAR(32),
-    model CHAR(32),
-    year CHAR(4),
-    color CHAR(20),
+    make VARCHAR(32),
+    model VARCHAR(32),
+    year VARCHAR(4),
+    color VARCHAR(20),
     odometer INT,
     gasTypeID INT,
     statusID INT, --FK to Status table
-    vtname CHAR(32),
-    location CHAR(50),
-    city CHAR(32),
-    reserved BIT
+    vtname VARCHAR(32),
+    location VARCHAR(50),
+    city VARCHAR(32),
+    reserved BIT,
 
     FOREIGN KEY (vtname) REFERENCES VehicleType(vtname),
     FOREIGN KEY (status) REFERENCES Status(statusID),
@@ -23,18 +23,18 @@ CREATE TABLE Vehicle (
 -- Codeset for status 1=Rented, 2=Maintenance, 3=Available
 CREATE TABLE Status(
     statusID INT PRIMARY KEY,
-    status CHAR(20)
+    status VARCHAR(20)
 )
 
 -- Codeset for gasType 1=Gasoline, 2=Hybrid, 3=Electric
 CREATE TABLE GasType(
     gasTypeID INT PRIMARY KEY,
-    gasType CHAR(32)
+    gasType VARCHAR(32)
 )
 
 CREATE TABLE VehicleTypes(
-    vtname CHAR(32) PRIMARY KEY,
-    features CHAR(50),
+    vtname VARCHAR(32) PRIMARY KEY,
+    features VARCHAR(50),
     wrate INT,
     drate INT,
     hrate INT,
@@ -46,17 +46,17 @@ CREATE TABLE VehicleTypes(
 
 -- Removed Club Member
 CREATE TABLE Customer(
-    dlicense CHAR(20) IDENTITY(1,1) PRIMARY KEY,
-    cellphone CHAR(20),
-    name CHAR(32),
-    address CHAR(32)
+    dlicense VARCHAR(20) IDENTITY(1,1) PRIMARY KEY,
+    cellphone VARCHAR(20),
+    name VARCHAR(32),
+    address VARCHAR(32)
 )
 
 CREATE TABLE Reservations(
     confNo INT IDENTITY(1,1) PRIMARY KEY,
-    vtname CHAR(32),
-    vlicense CHAR(32),
-    dlicense CHAR(20),
+    vtname VARCHAR(32),
+    vlicense VARCHAR(32),
+    dlicense VARCHAR(20),
     fromDateTime DATETIME,
     toDateTime DATETIME,
 
@@ -67,13 +67,13 @@ CREATE TABLE Reservations(
 
 CREATE TABLE Rent(
     rid INT IDENTITY(1,1) PRIMARY KEY,
-    vlicense CHAR(32),
-    dlicense CHAR(20), 
+    vlicense VARCHAR(32),
+    dlicense VARCHAR(20), 
     date DATETIME,
     fromDateTime DATETIME,
     toDateTime DATETIME,
     odometer INT,
-    cardNo CHAR(32),
+    cardNo VARCHAR(32),
     confNo INT NULL,
 
     FOREIGN KEY (vlicense) REFERENCES Vehicle(vlicense),
@@ -83,7 +83,7 @@ CREATE TABLE Rent(
 )
 
 CREATE TABLE Cards(
-    cardNo CHAR(32) PRIMARY KEY,
+    cardNo VARCHAR(32) PRIMARY KEY,
     expDate DATE,
     cardName CHAR(32)
 )
