@@ -341,4 +341,24 @@ public class DatabaseConnectionHandler {
 			System.out.println(EXCEPTION_TAG + " " + e.getMessage());
 		}
 	}
+
+//	private void signUp(String fullName, String dlNumber) {
+//		try {
+//			PreparedStatement ps = connection.prepareStatement("INSERT INTO Customer VALUES(?,?,?,?)");
+//			ps.setString(1, dlNumber);
+//			ps.setInt(2, id);
+//
+//			int rowCount = ps.executeUpdate();
+//			if (rowCount == 0) {
+//				System.out.println(WARNING_TAG + " Branch " + id + " does not exist!");
+//			}
+//
+//			connection.commit();
+//
+//			ps.close();
+//		} catch (SQLException e) {
+//			System.out.println(EXCEPTION_TAG + " " + e.getMessage());
+//			rollbackConnection();
+//		}
+//	}
 }

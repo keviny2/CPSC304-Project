@@ -3,12 +3,8 @@ package ca.ubc.cs304.controller;
 import ca.ubc.cs304.database.DatabaseConnectionHandler;
 import ca.ubc.cs304.delegates.RentingVehicleDelegate;
 import ca.ubc.cs304.ui.RentingVehicleWindow;
-
-import javax.swing.*;
 import java.sql.Date;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Objects;
 
 public class RentingVehicle implements RentingVehicleDelegate {
     private DatabaseConnectionHandler dbHandler = null;
@@ -39,7 +35,7 @@ public class RentingVehicle implements RentingVehicleDelegate {
         }
     }
 
-    public void rentReservedVehicle(int confirmation, String dlNumber, Date fromDate, Date toDate) throws SQLException {
+    public void rentReservedVehicle(String confirmation, String dlNumber, Date fromDate, Date toDate) {
         dbHandler.doRentalWithReservation(confirmation, dlNumber, fromDate, toDate);
     }
 }
