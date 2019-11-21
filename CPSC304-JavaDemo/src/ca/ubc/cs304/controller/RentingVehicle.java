@@ -25,21 +25,23 @@ public class RentingVehicle implements RentingVehicleDelegate {
     }
 
     public void rentVehicle(String location, String vehicleType, String fromDateTime, String toDateTime, String fullName, String dlNumber) {
-        Date fromDate = Date.valueOf(fromDateTime);
-        Date toDate = Date.valueOf(toDateTime);
         try {
-            Integer confNo = dbHandler.getReservation(dlNumber);
-            if (confNo != 0) {
-                rentReservedVehicle(confNo, dlNumber, fromDate, toDate);
+            String confNo = dbHandler.getReservation(dlNumber);
+            if (confNo != "") {
+                rentReservedVehicle(confNo, dlNumber);
             } else {
-                dbHandler.doRentalNoReservation(location, vehicleType, fromDate, toDate, fullName, dlNumber);
+                dbHandler.doRentalNoReservation(location, vehicleType, fromDateTime, toDateTime, fullName, dlNumber);
             }
         } catch (SQLException e) {
-            // TODO: display error window with e.message
+            JOptionPane.showMessageDialog(new JFrame(), e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    public void rentReservedVehicle(int confirmation, String dlNumber, Date fromDate, Date toDate) throws SQLException {
-        dbHandler.doRentalWithReservation(confirmation, dlNumber, fromDate, toDate);
+    public void rentReservedVehicle(String confirmation, String dlNumber) {
+        try {
+            dbHandler.doRentalWithReservation(confirmation, dlNumber);
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(new JFrame(), e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 }
