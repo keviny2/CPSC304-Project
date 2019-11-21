@@ -313,13 +313,19 @@ public class DatabaseConnectionHandler {
 		} catch (SQLException e) {
 			String[] empty = {""};
 			toReturn.set(0, empty);
-			return (String[][]) toReturn.toArray();
+			return arrayListToStringArray(toReturn);
 		}
 
-		return (String[][]) toReturn.toArray();
+		return arrayListToStringArray(toReturn);
 	}
 
-	private String[][] arrayListToStringArray()
+	private String[][] arrayListToStringArray(ArrayList<String[]> list) {
+		String[][] toReturn = new String[list.size()][];
+		for (int i = 0; i < list.size(); i++) {
+			toReturn[i] = list.get(i);
+		}
+		return toReturn;
+	}
 
 	public int reserveVehicle(Integer confNo, String location, String vehicleType, Date fromDateTime,
 							  Date toDateTime, String customerName, Long customerDL) {
