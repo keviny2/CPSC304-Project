@@ -172,6 +172,7 @@ public class MakeReservationWindow extends JFrame implements ActionListener {
         vehicleTypeComboBox.requestFocus();
     }
 
+    // TODO: Unsuccessful reservation shows success with confNo -1
     @Override
     public void actionPerformed(ActionEvent e) {
         try {
@@ -185,7 +186,7 @@ public class MakeReservationWindow extends JFrame implements ActionListener {
                                         // displays success message with conf num from what reserve func returns
                                         int confNum = delegate.reserve(locationField.getText(), (String) vehicleTypeComboBox.getSelectedItem(), fromDateTimeField.getText(), toDateTimeField.getText(), customerNameField.getText(), Long.parseLong(customerDLField.getText()));
                                         JOptionPane.showMessageDialog(new JFrame(), "You have reserved a vehicle!\n\nHere is your confirmation number: " + confNum, "Success", JOptionPane.INFORMATION_MESSAGE);
-                                        this.dispose();
+                                        // this.dispose();
                                     } else JOptionPane.showMessageDialog(new JFrame(), "Please enter your driver's license #", "Error", JOptionPane.ERROR_MESSAGE);
                                 } else JOptionPane.showMessageDialog(new JFrame(), "Please enter your full name", "Error", JOptionPane.ERROR_MESSAGE);
                             } else JOptionPane.showMessageDialog(new JFrame(), "Please enter the date & time rental will end", "Error", JOptionPane.ERROR_MESSAGE);

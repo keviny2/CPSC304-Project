@@ -19,6 +19,6 @@ public class SignUp implements SignUpDelegate {
     }
 
    public void signUp(String fullName, String address, long DLNumber) {
-
+        dbHandler.registerCustomer(fullName, address, DLNumber);
    }
 }

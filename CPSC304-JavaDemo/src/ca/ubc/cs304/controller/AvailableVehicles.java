@@ -29,10 +29,10 @@ public class AvailableVehicles implements AvailableVehiclesDelegate {
 		// if all empty/null, then display # of all available vehicles
 		ArrayList<String> criteria = new ArrayList<>();
 		if (vehicleType != null && !vehicleType.trim().equals("")) {
-			criteria.add("vtname = " + vehicleType);
+			criteria.add("vtname = \'" + vehicleType + "\'");
 		}
 		if (location != null && !location.trim().equals("")) {
-			criteria.add("location = " + location);
+			criteria.add("location = \'" + location + "\'");
 		}
 		String result = dbHandler.findVehicles(criteria);
 		if (result == "") {
@@ -53,11 +53,11 @@ public class AvailableVehicles implements AvailableVehiclesDelegate {
 		// replace the data array below with sql queries
 		String[] columnNames = { "Make", "Model", "Year", "Color", "Gas Type", "Vehicle Type" };
 		ArrayList<String> criteria = new ArrayList<>();
-		if (vehicleType != null) {
-			criteria.add("vtname = " + vehicleType);
+		if (vehicleType != null && !vehicleType.trim().equals("")) {
+			criteria.add("vtname = \'" + vehicleType + "\'");
 		}
-		if (location != null) {
-			criteria.add("location = " + location);
+		if (location != null && !location.trim().equals("")) {
+			criteria.add("location = \'" + location + "\'");
 		}
 		String[][] data = dbHandler.getVehicles(criteria);
 		if (data[0][0] == "") {

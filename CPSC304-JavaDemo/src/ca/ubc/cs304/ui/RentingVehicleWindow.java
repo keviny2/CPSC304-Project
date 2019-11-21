@@ -222,11 +222,12 @@ public class RentingVehicleWindow extends JFrame implements ActionListener {
                                 if (!customerNameField.getText().trim().equals("")) {
                                     if (!customerDLField.getText().trim().equals("")) {
                                         // displays success message with conf num from what reserve func returns
-                                        delegate.rentVehicle(locationField.getText(), (String) vehicleTypeComboBox.getSelectedItem(), fromDateTimeField.getText(), toDateTimeField.getText(), customerNameField.getText(), customerDLField.getText(), cardNumberField.getText(), cardNumberField.getText());
-                                        JOptionPane.showMessageDialog(new JFrame(), "You have successfully rented a vehicle!\n\nReceipt:\n" + "Location: " + locationField.getText() +
-                                                                                                                                                    "\nVehicle Type: " + vehicleTypeComboBox.getSelectedItem() +
-                                                                                                                                                        "\nPick up date & time: " + fromDateTimeField.getText() +
-                                                                                                                                                            "\nReturn date & time: " + toDateTimeField.getText(), "Success", JOptionPane.INFORMATION_MESSAGE);
+                                        if (delegate.rentVehicle(locationField.getText(), (String) vehicleTypeComboBox.getSelectedItem(), fromDateTimeField.getText(), toDateTimeField.getText(), customerNameField.getText(), customerDLField.getText(), cardNumberField.getText(), cardNumberField.getText())) {
+                                            JOptionPane.showMessageDialog(new JFrame(), "You have successfully rented a vehicle!\n\nReceipt:\n" + "Location: " + locationField.getText() +
+                                                    "\nVehicle Type: " + vehicleTypeComboBox.getSelectedItem() +
+                                                    "\nPick up date & time: " + fromDateTimeField.getText() +
+                                                    "\nReturn date & time: " + toDateTimeField.getText(), "Success", JOptionPane.INFORMATION_MESSAGE);
+                                        }
                                         this.dispose();
                                     } else JOptionPane.showMessageDialog(new JFrame(), "Please enter your driver's license #", "Error", JOptionPane.ERROR_MESSAGE);
                                 } else JOptionPane.showMessageDialog(new JFrame(), "Please enter your full name", "Error", JOptionPane.ERROR_MESSAGE);
@@ -247,6 +248,9 @@ public class RentingVehicleWindow extends JFrame implements ActionListener {
 
             cNumField = new JTextField(10);
             CDLNField = new JTextField(10);
+            cardExpDateField2 = new JTextField(10);
+            cardNumberField2 = new JTextField(10);
+
 
             JButton rentReservedButton2 = new JButton("Rent");
 
@@ -338,11 +342,12 @@ public class RentingVehicleWindow extends JFrame implements ActionListener {
         if (e.getActionCommand().equals("rentReserved2")) {
                 if (!cNumField.getText().equals("")) {
                     if (!CDLNField.getText().equals("")) {
-                        delegate.rentReservedVehicle(cNumField.getText(), CDLNField.getText(), fromDateTimeField.getText(), toDateTimeField.getText(), cardNumberField2.getText(), cardExpDateField2.getText());
-                        JOptionPane.showMessageDialog(new JFrame(), "You have successfully rented a vehicle!\n\nReceipt: " +
-                                                                                                                        "\nConfirmation #: " + cNumField.getText() +
-                                                                                                                            "\nDriver's license #: " + CDLNField.getText(), "Success", JOptionPane.INFORMATION_MESSAGE);
-
+                        if (delegate.rentReservedVehicle(cNumField.getText(), CDLNField.getText(), fromDateTimeField.getText(), toDateTimeField.getText(), cardNumberField2.getText(), cardExpDateField2.getText())) {
+                            ;
+                            JOptionPane.showMessageDialog(new JFrame(), "You have successfully rented a vehicle!\n\nReceipt: " +
+                                    "\nConfirmation #: " + cNumField.getText() +
+                                    "\nDriver's license #: " + CDLNField.getText(), "Success", JOptionPane.INFORMATION_MESSAGE);
+                        }
                         rentReservedWindow.dispose();
                     } else JOptionPane.showMessageDialog(new JFrame(), "Please enter your driver's license #", "Error", JOptionPane.ERROR_MESSAGE);
                 } else JOptionPane.showMessageDialog(new JFrame(), "Please enter your confirmation #", "Error", JOptionPane.ERROR_MESSAGE);
