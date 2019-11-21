@@ -4,6 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.sql.Date;
 
 import ca.ubc.cs304.delegates.RentingVehicleDelegate;
 import ca.ubc.cs304.ui.utils.VehicleTypeNames;
@@ -19,6 +20,10 @@ public class RentingVehicleWindow extends JFrame implements ActionListener {
     private VehicleTypeNames vtNames = new VehicleTypeNames();
     private JTextField cNumField;
     private JTextField CDLNField;
+    private JTextField cardNumberField;
+    private JTextField cardNumberField2;
+    private JTextField cardExpDateField;
+    private JTextField cardExpDateField2;
     private JFrame rentReservedWindow = new JFrame();
 
     private RentingVehicleDelegate delegate;
@@ -44,6 +49,8 @@ public class RentingVehicleWindow extends JFrame implements ActionListener {
         JLabel customerNameLabel = new JLabel("Full name: ");
         JLabel customerDLLabel = new JLabel("Driver's License #: ");
         JLabel rentReservedLabel = new JLabel("Made a reservation? Click here: ");
+        JLabel cardNumberLabel = new JLabel("Credit Card #: ");
+        JLabel cardExpDateLabel = new JLabel("Expiry date (mm/yy): ");
 
         // declares all Swing input objects here
         vehicleTypeComboBox = new JComboBox(vtNames.getNames());
@@ -53,6 +60,8 @@ public class RentingVehicleWindow extends JFrame implements ActionListener {
         toDateTimeField = new JTextField(10);
         customerNameField = new JTextField(10);
         customerDLField = new JTextField(10);
+        cardNumberField = new JTextField(10);
+        cardExpDateField = new JTextField(10);
 
         JButton rentButton = new JButton("Rent");
         JButton rentReservedButton = new JButton("Rent Reserved");
@@ -155,6 +164,26 @@ public class RentingVehicleWindow extends JFrame implements ActionListener {
         gb.setConstraints(customerDLField, c);
         contentPane.add(customerDLField);
 
+        c.gridwidth = GridBagConstraints.RELATIVE;
+        c.insets = new Insets(10, 10, 10, 0);
+        gb.setConstraints(cardNumberLabel, c);
+        contentPane.add(cardNumberLabel);
+
+        c.gridwidth = GridBagConstraints.REMAINDER;
+        c.insets = new Insets(10, 0, 10, 0);
+        gb.setConstraints(cardNumberField, c);
+        contentPane.add(cardNumberField);
+
+        c.gridwidth = GridBagConstraints.RELATIVE;
+        c.insets = new Insets(10, 10, 10, 0);
+        gb.setConstraints(cardExpDateLabel, c);
+        contentPane.add(cardExpDateLabel);
+
+        c.gridwidth = GridBagConstraints.REMAINDER;
+        c.insets = new Insets(10, 0, 10, 0);
+        gb.setConstraints(cardExpDateField, c);
+        contentPane.add(cardExpDateField);
+
         // place the find button
         c.gridwidth = GridBagConstraints.REMAINDER;
         c.insets = new Insets(10, 0, 10, 10);
@@ -167,13 +196,6 @@ public class RentingVehicleWindow extends JFrame implements ActionListener {
         rentButton.addActionListener(this);
         rentReservedButton.setActionCommand("rentReserved");
         rentReservedButton.addActionListener(this);
-
-//        // anonymous inner class for closing the window
-//        this.addWindowListener(new WindowAdapter() {
-//            public void windowClosing(WindowEvent e) {
-//                System.exit(0);
-//            }
-//        });
 
         // size the window to obtain a best fit for the components
         this.pack();
@@ -200,7 +222,7 @@ public class RentingVehicleWindow extends JFrame implements ActionListener {
                                 if (!customerNameField.getText().trim().equals("")) {
                                     if (!customerDLField.getText().trim().equals("")) {
                                         // displays success message with conf num from what reserve func returns
-                                        delegate.rentVehicle(locationField.getText(), (String) vehicleTypeComboBox.getSelectedItem(), fromDateTimeField.getText(), toDateTimeField.getText(), customerNameField.getText(), customerDLField.getText());
+                                        delegate.rentVehicle(locationField.getText(), (String) vehicleTypeComboBox.getSelectedItem(), fromDateTimeField.getText(), toDateTimeField.getText(), customerNameField.getText(), customerDLField.getText(), cardNumberField.getText(), cardNumberField.getText());
                                         JOptionPane.showMessageDialog(new JFrame(), "You have successfully rented a vehicle!\n\nReceipt:\n" + "Location: " + locationField.getText() +
                                                                                                                                                     "\nVehicle Type: " + vehicleTypeComboBox.getSelectedItem() +
                                                                                                                                                         "\nPick up date & time: " + fromDateTimeField.getText() +
@@ -220,6 +242,8 @@ public class RentingVehicleWindow extends JFrame implements ActionListener {
             JLabel CILabel = new JLabel("Customer Information:");
             JLabel cNumLabel = new JLabel("Confirmation #: ");
             JLabel CDLNLabel = new JLabel("Driver's license #: ");
+            JLabel cardNumberLabel = new JLabel("Credit Card #: ");
+            JLabel cardExpDateLabel = new JLabel("Expiry date (mm/yy): ");
 
             cNumField = new JTextField(10);
             CDLNField = new JTextField(10);
@@ -265,6 +289,26 @@ public class RentingVehicleWindow extends JFrame implements ActionListener {
             gb.setConstraints(CDLNField, c);
             contentPane.add(CDLNField);
 
+            c.gridwidth = GridBagConstraints.RELATIVE;
+            c.insets = new Insets(10, 10, 10, 0);
+            gb.setConstraints(cardNumberLabel, c);
+            contentPane.add(cardNumberLabel);
+
+            c.gridwidth = GridBagConstraints.REMAINDER;
+            c.insets = new Insets(10, 0, 10, 0);
+            gb.setConstraints(cardNumberField2, c);
+            contentPane.add(cardNumberField2);
+
+            c.gridwidth = GridBagConstraints.RELATIVE;
+            c.insets = new Insets(10, 10, 10, 0);
+            gb.setConstraints(cardExpDateLabel, c);
+            contentPane.add(cardExpDateLabel);
+
+            c.gridwidth = GridBagConstraints.REMAINDER;
+            c.insets = new Insets(10, 0, 10, 0);
+            gb.setConstraints(cardExpDateField2, c);
+            contentPane.add(cardExpDateField2);
+
             c.gridwidth = GridBagConstraints.REMAINDER;
             c.insets = new Insets(10, 0, 10, 10);
             c.anchor = GridBagConstraints.CENTER;
@@ -294,7 +338,7 @@ public class RentingVehicleWindow extends JFrame implements ActionListener {
         if (e.getActionCommand().equals("rentReserved2")) {
                 if (!cNumField.getText().equals("")) {
                     if (!CDLNField.getText().equals("")) {
-                        delegate.rentReservedVehicle(cNumField.getText(), CDLNField.getText());
+                        delegate.rentReservedVehicle(cNumField.getText(), CDLNField.getText(), fromDateTimeField.getText(), toDateTimeField.getText(), cardNumberField2.getText(), cardExpDateField2.getText());
                         JOptionPane.showMessageDialog(new JFrame(), "You have successfully rented a vehicle!\n\nReceipt: " +
                                                                                                                         "\nConfirmation #: " + cNumField.getText() +
                                                                                                                             "\nDriver's license #: " + CDLNField.getText(), "Success", JOptionPane.INFORMATION_MESSAGE);
