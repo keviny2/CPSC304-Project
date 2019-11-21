@@ -5,10 +5,8 @@ import ca.ubc.cs304.delegates.RentingVehicleDelegate;
 import ca.ubc.cs304.ui.RentingVehicleWindow;
 
 import javax.swing.*;
-import java.sql.Date;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Objects;
+
 
 public class RentingVehicle implements RentingVehicleDelegate {
     private DatabaseConnectionHandler dbHandler = null;
