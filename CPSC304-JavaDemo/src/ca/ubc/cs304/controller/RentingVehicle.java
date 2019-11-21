@@ -7,7 +7,6 @@ import ca.ubc.cs304.ui.RentingVehicleWindow;
 import javax.swing.*;
 import java.sql.SQLException;
 
-
 public class RentingVehicle implements RentingVehicleDelegate {
     private DatabaseConnectionHandler dbHandler = null;
     private RentingVehicleWindow rentingVehicleWindow = null;
