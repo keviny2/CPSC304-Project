@@ -20,6 +20,7 @@ public class SuperRent {
         rentingVehicle.start();
         ReturningVehicle returningVehicle = new ReturningVehicle(dbHandler);
         returningVehicle.start();
+        login.requestFocus();
     }
 
 }

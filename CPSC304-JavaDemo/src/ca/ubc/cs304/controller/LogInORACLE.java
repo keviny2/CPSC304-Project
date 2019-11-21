@@ -39,4 +39,8 @@ public class LogInORACLE implements LoginWindowDelegate{
             }
         }
     }
+
+    public void requestFocus() {
+        loginWindow.requestFocus();
+    }
 }
