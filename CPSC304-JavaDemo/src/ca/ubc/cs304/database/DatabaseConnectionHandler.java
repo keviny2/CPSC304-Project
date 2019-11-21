@@ -1,9 +1,11 @@
 package ca.ubc.cs304.database;
 
 import ca.ubc.cs304.model.BranchModel;
+import oracle.jdbc.proxy.annotation.Pre;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Objects;
 
 /**
  * This class handles all database related transactions
@@ -112,15 +114,91 @@ public class DatabaseConnectionHandler {
 		return result.toArray(new BranchModel[result.size()]);
 	}
 
+	public int getReservation(String dlNumber) {
+		int ret = 0;
+		try {
+			PreparedStatement stmt = connection.prepareStatement("SELECT confNo FROM Reservations WHERE dlicense = ?");
+			stmt.setString(1, dlNumber);
+			ResultSet rs = stmt.executeQuery();
+			if (rs.next()) {
+				ret = rs.getInt(1);
+			}
+
+			rs.close();
+			stmt.close();
+		} catch (SQLException e) {
+			return ret;
+		}
+
+		return ret;
+	}
+
+	public void doRentalWithReservation(Integer confirmation, String dlNumber, Date fromDate, Date toDate) {
+		return;
+	}
+
+	public void doRentalNoReservation(String location, String vehicleType, Date fromDate,
+									  Date toDate, String fullName, String dlNumber) throws SQLException {
+		try {
+			PreparedStatement ps = connection.prepareStatement("SELECT vid, vlicense FROM Vehicle WHERE vtname = ? AND location = ? AND reserved = 0");
+			ps.setString(1, vehicleType);
+			ps.setString(2, location);
+			ResultSet rs = ps.executeQuery();
+			int vid;
+			String vlicense;
+
+			if (rs.next()) { // at least 1 row
+				vid = rs.getInt(1);
+				vlicense = rs.getString(2);
+			} else {
+				throw new SQLException("No vehicle able to rent.");
+			}
+			ps.close();
+			ps = connection.prepareStatement("UPDATE Vehicle SET reserved = 1 WHERE vid = ?");
+			ps.setInt(1, vid);
+			ps.executeUpdate();
+			connection.commit();
+			ps.close();
+
+			ps = connection.prepareStatement("SELECT MAX(r.odometer) FROM Return r NATURAL JOIN Rent re WHERE re.vlicense = ?");
+			ps.setString(1, vlicense);
+			rs = ps.executeQuery();
+			int odometer = (rs.next() ? rs.getInt(1) : 0);
+			ps.close();
+
+			ps = connection.prepareStatement("INSERT INTO Rent VALUES (?,?,?,?,?,?,?,?,?)");
+			ps.setInt(1, Objects.hash(dlNumber));
+			ps.setString(2, vlicense);
+			Date now = new Date(new java.util.Date().getTime());
+			ps.setDate(3, now);
+			ps.setDate(4, fromDate);
+			ps.setDate(5, toDate);
+			ps.setInt(6, odometer);
+			ps.setString(7, "CARD NUMBER PLS"); // TODO: Card number.
+			ps.executeUpdate();
+			connection.commit();
+
+			ps.close();
+			rs.close();
+
+		} catch (SQLException e) {
+			rollbackConnection();
+			throw e;
+		}
+	}
+
 	public String findVehicles(ArrayList<String> criteria) {
 		Integer count = 0;
 		try {
-			String sql = "SELECT COUNT(*) FROM Vehicle WHERE";
+			String sql = "SELECT COUNT(*) FROM Vehicle";
 			for (int i = 0; i < criteria.size(); i++) {
+				if (i == 0) {
+					sql += " WHERE";
+				}
 				if (i == criteria.size() - 1) {
 					sql += " " + criteria;
 				} else {
-					sql += " " + criteria + ",";
+					sql += " " + criteria + " AND";
 				}
 			}
 			Statement stmt = connection.createStatement();
@@ -146,12 +224,15 @@ public class DatabaseConnectionHandler {
 		ArrayList<String[]> toReturn = new ArrayList<>();
 		try {
 			String sql = "SELECT v.make, v.model, v.year, v.color, g.gasType, v.vtname" +
-						"FROM Vehicle NATURAL JOIN GasType WHERE";
+						"FROM Vehicle NATURAL JOIN GasType";
 			for (int i = 0; i < criteria.size(); i++) {
+				if (i == 0) {
+					sql += " WHERE";
+				}
 				if (i == criteria.size() - 1) {
 					sql += " " + criteria;
 				} else {
-					sql += " " + criteria + ",";
+					sql += " " + criteria + " AND";
 				}
 			}
 			Statement stmt = connection.createStatement();
@@ -177,6 +258,43 @@ public class DatabaseConnectionHandler {
 		}
 
 		return (String[][]) toReturn.toArray();
+	}
+
+	public int reserveVehicle(Integer confNo, String location, String vehicleType, Date fromDateTime,
+							  Date toDateTime, String customerName, Long customerDL) {
+		try {
+			PreparedStatement ps = connection.prepareStatement("INSERT INTO Reservations VALUES (?,?,?,?,?)");
+			Statement stmt = connection.createStatement();
+			ResultSet rs = stmt.executeQuery(
+					"SELECT vlicense FROM Vehicle WHERE reserved = 0 AND vtname = " + vehicleType);
+
+			ps.setString(1, confNo.toString());
+			ps.setString(2, vehicleType);
+			ps.setString(3, rs.getString(1)); // vlicense
+			ps.setString(4, customerDL.toString());
+			ps.setDate(5, fromDateTime); // from
+			ps.setDate(6, toDateTime); // to
+
+			rs = stmt.executeQuery("SELECT * FROM Customer WHERE dlicense = " + customerDL.toString());
+			if (!rs.next()) {
+				PreparedStatement ps2 = connection.prepareStatement("INSERT INTO Customer VALUES (?,?,?,?)");
+				ps2.setString(1, customerDL.toString());
+				ps2.setNull(2, Types.VARCHAR);
+				ps2.setString(3, customerName);
+				ps2.setNull(4, Types.VARCHAR);
+				ps2.executeUpdate();
+			}
+
+			ps.executeUpdate();
+			connection.commit();
+
+			ps.close();
+			stmt.close();
+			rs.close();
+		} catch (SQLException e) {
+			rollbackConnection();
+		}
+		return confNo;
 	}
 	
 	public void updateBranch(int id, String name) {

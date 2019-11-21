@@ -28,10 +28,10 @@ public class AvailableVehicles implements AvailableVehiclesDelegate {
 		// show number of vehicles of above spec
 		// if all empty/null, then display # of all available vehicles
 		ArrayList<String> criteria = new ArrayList<>();
-		if (vehicleType != null) {
+		if (vehicleType != null && !vehicleType.trim().equals("")) {
 			criteria.add("vtname = " + vehicleType);
 		}
-		if (location != null) {
+		if (location != null && !location.trim().equals("")) {
 			criteria.add("location = " + location);
 		}
 		String result = dbHandler.findVehicles(criteria);
