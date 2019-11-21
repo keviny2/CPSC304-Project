@@ -24,20 +24,20 @@ public class MakeReservation implements MakeReservationDelegate {
         makeReservationWindow.showFrame(this);
     }
 
-    public boolean reserve(String location, String vehicleType, String fromDateTime, String toDateTime, String customerName, long customerDL) throws SQLException {
+    public int reserve(String location, String vehicleType, String fromDateTime, String toDateTime, String customerName, long customerDL) {
         // if reservation didn't go through return -1
         ArrayList<String> criteria = new ArrayList<>();
         criteria.add("vtname = \'" + vehicleType + "\'");
         criteria.add("location = \'" + location + "\'");
 
         String result = dbHandler.findVehicles(criteria);
-        if (result == "") {
-            throw new SQLException("Invalid query.")
-        } else if (result == "0") {
-            throw new SQLException("No vehicles matching criteria found.");
+        if (result.equals("")) {
+            JOptionPane.showMessageDialog(new JFrame(), "Invalid query", "Error", JOptionPane.ERROR_MESSAGE);
+            return -1;
+        } else if (result.equals("0")) {
+            JOptionPane.showMessageDialog(new JFrame(), "No matching vehicles found", "Error", JOptionPane.ERROR_MESSAGE);
+            return -1;
         }
-        Date fromDate = Date.valueOf(fromDateTime);
-        Date toDate = Date.valueOf(toDateTime);
-        return dbHandler.reserveVehicle(location, vehicleType, fromDate, toDate, customerName, customerDL);
+        return dbHandler.reserveVehicle(location, vehicleType, fromDateTime, toDateTime, customerName, customerDL);
     }
 }
