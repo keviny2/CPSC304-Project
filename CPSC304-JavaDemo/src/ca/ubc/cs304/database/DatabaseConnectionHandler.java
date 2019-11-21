@@ -120,7 +120,7 @@ public class DatabaseConnectionHandler {
 			PreparedStatement stmt = connection.prepareStatement("SELECT confNo FROM Reservations WHERE dlicense = ?");
 			stmt.setString(1, dlNumber);
 			ResultSet rs = stmt.executeQuery();
-			if (rs.next()) {
+			while (rs.next()) { // gets the last confNo
 				ret = rs.getInt(1);
 			}
 
@@ -129,12 +129,30 @@ public class DatabaseConnectionHandler {
 		} catch (SQLException e) {
 			return ret;
 		}
-
 		return ret;
 	}
 
 	public void doRentalWithReservation(Integer confirmation, String dlNumber, Date fromDate, Date toDate) {
-		return;
+		// 1. Get rid (hash dlicense)
+		// 2. get confNo, vtname, vlicense, dlicense from Reservations
+		// 3. Generate now dateTime
+		// 4. Get MAX(odometer) from Returns. If none, set odometer to 0 (because its a new car)
+		// 5. Update to include cardNo
+		int rid = Objects.hash(dlNumber);
+		String vtname, vlicense, dlicense;
+		PreparedStatement ps = connection.prepareStatement("SELECT vtname, vlicense, dlicense FROM Reservations WHERE confNo = ?");
+		ps.setInt(1, confirmation);
+		ResultSet rs = ps.executeQuery();
+		if (rs.next()) {
+			vtname = rs.getString(1);
+			vlicense = rs.getString(2);
+			dlicense = rs.getString(3);
+		}
+		Date now = new Date(new java.util.Date().getTime());
+		ps.close();
+		rs.close();
+		// NATURAL JOIN r re doesnt work (odometer!)
+		// TODO: Finish
 	}
 
 	public void doRentalNoReservation(String location, String vehicleType, Date fromDate,
