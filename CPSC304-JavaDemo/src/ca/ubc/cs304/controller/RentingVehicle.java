@@ -21,11 +21,10 @@ public class RentingVehicle implements RentingVehicleDelegate {
         rentingVehicleWindow.showFrame(this);
     }
 
-    public void rentVehicle(String location, String vehicleType, String fromDateTime, String toDateTime,
-                           String fullName, String dlNumber, String cardNumber, String cardExpDate) {
+    public void rentVehicle(String location, String vehicleType, String fromDateTime, String toDateTime, String fullName, String dlNumber, String cardNumber, String cardExpDate) {
         try {
             String confNo = dbHandler.getReservation(dlNumber);
-            if (confNo != "") {
+            if (confNo.equals("")) {
                 rentReservedVehicle(confNo, dlNumber, fromDateTime, toDateTime, cardNumber, cardExpDate);
             } else {
                 dbHandler.doRentalNoReservation(location, vehicleType, fromDateTime, toDateTime, fullName, dlNumber, cardNumber);
@@ -35,8 +34,7 @@ public class RentingVehicle implements RentingVehicleDelegate {
         }
     }
 
-    public void rentReservedVehicle(String confirmation, String dlNumber,
-                                    String fromDate, String toDate, String cardNumber, String cardExpDate) {
+    public void rentReservedVehicle(String confirmation, String dlNumber, String fromDate, String toDate, String cardNumber, String cardExpDate) {
         try {
             dbHandler.doRentalWithReservation(confirmation, dlNumber, cardNumber);
         } catch (SQLException e) {

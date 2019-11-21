@@ -247,6 +247,9 @@ public class RentingVehicleWindow extends JFrame implements ActionListener {
 
             cNumField = new JTextField(10);
             CDLNField = new JTextField(10);
+            cardExpDateField2 = new JTextField(10);
+            cardNumberField2 = new JTextField(10);
+
 
             JButton rentReservedButton2 = new JButton("Rent");
 

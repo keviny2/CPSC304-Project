@@ -12,14 +12,14 @@ public class SuperRent {
         login.start();
         AvailableVehicles availableVehicles = new AvailableVehicles(dbHandler);
         availableVehicles.start();
-//        SignUp signUp = new SignUp(dbHandler);
-//        signUp.start();
-//        MakeReservation makeReservation = new MakeReservation(dbHandler);
-//        makeReservation.start();
-//        RentingVehicle rentingVehicle = new RentingVehicle(dbHandler);
-//        rentingVehicle.start();
-//        ReturningVehicle returningVehicle = new ReturningVehicle(dbHandler);
-//        returningVehicle.start();
+        SignUp signUp = new SignUp(dbHandler);
+        signUp.start();
+        MakeReservation makeReservation = new MakeReservation(dbHandler);
+        makeReservation.start();
+        RentingVehicle rentingVehicle = new RentingVehicle(dbHandler);
+        rentingVehicle.start();
+        ReturningVehicle returningVehicle = new ReturningVehicle(dbHandler);
+        returningVehicle.start();
     }
 
 }

@@ -18,6 +18,7 @@ public class ReturningVehicle implements ReturningVehicleDelegate {
         returningVehicleWindow.showFrame(this);
     }
 
+    // String[0] = confNo, String[1] =
     public String[] returnVehicle(String dateTimeReturned, int odometerReading, boolean isTankFull) {
         System.out.println(odometerReading);
         System.out.println(isTankFull);

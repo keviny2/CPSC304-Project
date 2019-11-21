@@ -1,7 +1,6 @@
 package ca.ubc.cs304.database;
 
 import ca.ubc.cs304.model.BranchModel;
-import oracle.jdbc.proxy.annotation.Pre;
 
 import java.sql.*;
 import java.text.DateFormat;
