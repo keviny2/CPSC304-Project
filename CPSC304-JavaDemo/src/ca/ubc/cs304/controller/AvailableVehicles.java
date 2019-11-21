@@ -13,8 +13,8 @@ public class AvailableVehicles implements AvailableVehiclesDelegate {
 	private DatabaseConnectionHandler dbHandler = null;
 	private AvailableVehiclesWindow availableVehiclesWindow = null;
 
-	public AvailableVehicles() {
-		dbHandler = new DatabaseConnectionHandler();
+	public AvailableVehicles(DatabaseConnectionHandler dbHandler) {
+		this.dbHandler = dbHandler;
 	}
 	
 	public void start() {
