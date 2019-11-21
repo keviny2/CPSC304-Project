@@ -199,6 +199,55 @@ public class DatabaseConnectionHandler {
 		}
 	}
 
+	public void isRented(String vlicense){
+		try {
+			PreparedStatement ps = connection.prepareStatement("SELECT COUNT(*) FROM Rent WHERE vlicense = ?");
+			ps.setString(1, vlicense);
+			ResultSet rs = ps.executeQuery();
+
+			if (!rs.next()) {
+				throw new SQLException("Vehicle was not rented.");
+			}
+		} catch (SQLException e) {
+			rollbackConnection();
+		}
+	}
+
+	public ArrayList<String> getValue(String vlicense, String dateTimeReturned){
+		ArrayList<String> retVal = new ArrayList<>();
+		try {
+			String query = "{CALL CalculateValue(?,?)}";
+			CallableStatement stmt = connection.prepareCall(query);
+			stmt.setString(1, vlicense);
+			stmt.setString(2, dateTimeReturned);
+
+			ResultSet rs = stmt.executeQuery();
+			if (rs.next()){
+				retVal.add(Integer.toString(rs.getInt("Value")));
+				retVal.add(rs.getString("HowCalculate"));
+			} else {
+				throw new SQLException("Error in computing value");
+			}
+		} catch (SQLException e) {
+			rollbackConnection();
+		}
+		return retVal;
+	}
+
+	public void returnVehicle(String dateTimeReturned, int odometerReading, boolean isTankFull, int value) {
+		try {
+			PreparedStatement ps = connection.prepareStatement("INSERT INTO \"RETURN\"(?,?,?,?,?)");
+			ps.setString(1, "p");
+			ResultSet rs = ps.executeQuery();
+
+			if (!rs.next()) {
+				throw new SQLException("Vehicle was not rented.");
+			}
+		} catch (SQLException e) {
+			rollbackConnection();
+		}
+	}
+
 	public void doRentalNoReservation(String location, String vehicleType, String fromDate,
 									  String toDate, String fullName, String dlNumber, String cardNumber) throws SQLException {
 		try {
