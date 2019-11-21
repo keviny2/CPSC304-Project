@@ -8,8 +8,8 @@ public class MakeReservation implements MakeReservationDelegate {
     private DatabaseConnectionHandler dbHandler = null;
     private MakeReservationWindow makeReservationWindow = null;
 
-    public MakeReservation() {
-        dbHandler = new DatabaseConnectionHandler();
+    public MakeReservation(DatabaseConnectionHandler dbHandler) {
+        this.dbHandler = dbHandler;
     }
 
     public void start() {
