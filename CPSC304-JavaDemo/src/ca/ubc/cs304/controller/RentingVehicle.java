@@ -2,7 +2,6 @@ package ca.ubc.cs304.controller;
 
 import ca.ubc.cs304.database.DatabaseConnectionHandler;
 import ca.ubc.cs304.delegates.RentingVehicleDelegate;
-import ca.ubc.cs304.ui.AvailableVehiclesWindow;
 import ca.ubc.cs304.ui.RentingVehicleWindow;
 
 import javax.swing.*;

@@ -18,6 +18,8 @@ public class SuperRent {
         makeReservation.start();
         RentingVehicle rentingVehicle = new RentingVehicle(dbHandler);
         rentingVehicle.start();
+        ReturningVehicle returningVehicle = new ReturningVehicle(dbHandler);
+        returningVehicle.start();
     }
 
 }
