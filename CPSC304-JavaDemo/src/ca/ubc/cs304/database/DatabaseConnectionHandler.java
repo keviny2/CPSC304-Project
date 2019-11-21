@@ -4,6 +4,8 @@ import ca.ubc.cs304.model.BranchModel;
 import oracle.jdbc.proxy.annotation.Pre;
 
 import java.sql.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Objects;
 
@@ -14,6 +16,8 @@ public class DatabaseConnectionHandler {
 	private static final String ORACLE_URL = "jdbc:oracle:thin:@localhost:1522:stu";
 	private static final String EXCEPTION_TAG = "[EXCEPTION]";
 	private static final String WARNING_TAG = "[WARNING]";
+	private static final String pattern = "YYYY-MM-DD";
+	private static final DateFormat df = new SimpleDateFormat(pattern);
 	
 	private Connection connection = null;
 	
@@ -114,14 +118,14 @@ public class DatabaseConnectionHandler {
 		return result.toArray(new BranchModel[result.size()]);
 	}
 
-	public int getReservation(String dlNumber) {
-		int ret = 0;
+	public String getReservation(String dlNumber) {
+		String ret = "";
 		try {
 			PreparedStatement stmt = connection.prepareStatement("SELECT confNo FROM Reservations WHERE dlicense = ?");
 			stmt.setString(1, dlNumber);
 			ResultSet rs = stmt.executeQuery();
-			if (rs.next()) {
-				ret = rs.getInt(1);
+			while (rs.next()) { // gets the last confNo
+				ret = rs.getString(1);
 			}
 
 			rs.close();
@@ -129,16 +133,61 @@ public class DatabaseConnectionHandler {
 		} catch (SQLException e) {
 			return ret;
 		}
-
 		return ret;
 	}
 
-	public void doRentalWithReservation(Integer confirmation, String dlNumber, Date fromDate, Date toDate) {
-		return;
+	public void doRentalWithReservation(String confirmation, String dlNumber) throws SQLException {
+		// 1. Get rid (hash dlicense)
+		// 2. get confNo, vtname, vlicense, dlicense, fromDateTime, toDateTime from Reservations
+		// 3. Generate now dateTime
+		// 4. Get MAX(odometer) from Returns. If none, set odometer to 0 (because its a new car)
+		// 5. Update to include cardNo
+		try {
+			int rid = Objects.hash(dlNumber);
+			String vtname = "", vlicense = "", dlicense = "", fromDateTime = "", toDateTime = "";
+			PreparedStatement ps = connection.prepareStatement("SELECT vtname, vlicense, dlicense, fromDateTime, toDateTime FROM Reservations WHERE confNo = ?");
+			ps.setString(1, confirmation);
+			ResultSet rs = ps.executeQuery();
+			if (rs.next()) {
+				vtname = rs.getString(1);
+				vlicense = rs.getString(2);
+				dlicense = rs.getString(3);
+				fromDateTime = rs.getString(4);
+				toDateTime = rs.getString(5);
+			}
+			Date now = new Date(new java.util.Date().getTime());
+			ps.close();
+			rs.close();
+			ps = connection.prepareStatement("SELECT MAX(re.odometer) " +
+					"FROM Rent r, \"RETURN\" re WHERE re.rid = r.rid AND vlicense = ?");
+			ps.setString(1, vlicense);
+			rs = ps.executeQuery();
+			int odometer = (rs.next() ? rs.getInt(1) : 0);
+			String cardNo = "CARD NUM PLS";
+			ps.close();
+			rs.close();
+
+			ps = connection.prepareStatement("INSERT INTO Rent VALUES (?,?,?,?,?,?,?,?,?)");
+			ps.setInt(1, rid);
+			ps.setString(2, vlicense);
+			ps.setString(3, dlicense);
+			ps.setString(4, df.format(now));
+			ps.setString(5, fromDateTime);
+			ps.setString(6, toDateTime);
+			ps.setInt(7, odometer);
+			ps.setString(8, cardNo);
+			ps.setString(9, confirmation);
+			ps.executeUpdate();
+			connection.commit();
+			ps.close();
+		} catch (SQLException e) {
+			rollbackConnection();
+			throw e;
+		}
 	}
 
-	public void doRentalNoReservation(String location, String vehicleType, Date fromDate,
-									  Date toDate, String fullName, String dlNumber) throws SQLException {
+	public void doRentalNoReservation(String location, String vehicleType, String fromDate,
+									  String toDate, String fullName, String dlNumber) throws SQLException {
 		try {
 			PreparedStatement ps = connection.prepareStatement("SELECT vid, vlicense FROM Vehicle WHERE vtname = ? AND location = ? AND reserved = 0");
 			ps.setString(1, vehicleType);
@@ -171,8 +220,8 @@ public class DatabaseConnectionHandler {
 			ps.setString(2, vlicense);
 			Date now = new Date(new java.util.Date().getTime());
 			ps.setDate(3, now);
-			ps.setDate(4, fromDate);
-			ps.setDate(5, toDate);
+			ps.setString(4, fromDate);
+			ps.setString(5, toDate);
 			ps.setInt(6, odometer);
 			ps.setString(7, "CARD NUMBER PLS"); // TODO: Card number.
 			ps.executeUpdate();
@@ -180,7 +229,6 @@ public class DatabaseConnectionHandler {
 
 			ps.close();
 			rs.close();
-
 		} catch (SQLException e) {
 			rollbackConnection();
 			throw e;
