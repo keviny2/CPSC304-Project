@@ -17,6 +17,8 @@ public class DatabaseConnectionHandler {
 	private static final String WARNING_TAG = "[WARNING]";
 	private static final String pattern = "YYYY-MM-DD";
 	private static final DateFormat df = new SimpleDateFormat(pattern);
+	private static Integer confNo = 0;
+    private static Integer rid = 0;
 	
 	private Connection connection = null;
 	
@@ -135,14 +137,36 @@ public class DatabaseConnectionHandler {
 		return ret;
 	}
 
+	private Integer getConfNo() {
+        try {
+            Statement stmt = connection.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT MAX(CAST(CONFNO AS INT)) FROM RESERVATIONS");
+            rs.next();
+            return rs.getInt(1) + 1;
+        } catch (SQLException e) {
+            return 123456789;
+        }
+    }
+
+    private Integer getRid() {
+        try {
+            Statement stmt = connection.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT MAX(RID) FROM RENT");
+            rs.next();
+            return rs.getInt(1) + 1;
+        } catch (SQLException e) {
+            return 123456789;
+        }
+    }
+
 	public void doRentalWithReservation(String confirmation, String dlNumber, String cardNumber) throws SQLException {
-		// 1. Get rid (hash dlicense)
-		// 2. get confNo, vtname, vlicense, dlicense, fromDateTime, toDateTime from Reservations
+		// 1. Get rid
+		// 2. get vtname, vlicense, dlicense, fromDateTime, toDateTime from Reservations
 		// 3. Generate now dateTime
 		// 4. Get MAX(odometer) from Returns. If none, set odometer to 0 (because its a new car)
 		// 5. Update to include cardNo
 		try {
-			int rid = Objects.hash(dlNumber);
+			rid = (rid == 0) ? getRid() : rid;
 			String vtname = "", vlicense = "", dlicense = "", fromDateTime = "", toDateTime = "";
 			PreparedStatement ps = connection.prepareStatement("SELECT vtname, vlicense, dlicense, fromDateTime, toDateTime FROM Reservations WHERE confNo = ?");
 			ps.setString(1, confirmation);
@@ -157,16 +181,19 @@ public class DatabaseConnectionHandler {
 			Date now = new Date(new java.util.Date().getTime());
 			ps.close();
 			rs.close();
-			ps = connection.prepareStatement("SELECT MAX(re.odometer) " +
-					"FROM Rent r, \"RETURN\" re WHERE re.rid = r.rid AND vlicense = ?");
+			ps = connection.prepareStatement("SELECT ODOMETER FROM VEHICLE WHERE VLICENSE = ? AND VTNAME = ?");
 			ps.setString(1, vlicense);
+			ps.setString(2, vtname);
 			rs = ps.executeQuery();
 			int odometer = (rs.next() ? rs.getInt(1) : 0);
 			ps.close();
 			rs.close();
 
-			ps = connection.prepareStatement("INSERT INTO Rent VALUES (?,?,?,?,?,?,?,?,?)");
+			addCardNumberToCards(cardNumber);
+
+            ps = connection.prepareStatement("INSERT INTO Rent VALUES (?,?,?,?,?,?,?,?,?)");
 			ps.setInt(1, rid);
+			rid++;
 			ps.setString(2, vlicense);
 			ps.setString(3, dlicense);
 			ps.setString(4, df.format(now));
@@ -208,7 +235,6 @@ public class DatabaseConnectionHandler {
 			ResultSet rs = ps.executeQuery();
 			int vid;
 			String vlicense;
-
 			if (rs.next()) { // at least 1 row
 				vid = rs.getInt(1);
 				vlicense = rs.getString(2);
@@ -216,29 +242,29 @@ public class DatabaseConnectionHandler {
 				throw new SQLException("No vehicle able to rent.");
 			}
 			ps.close();
-			ps = connection.prepareStatement("UPDATE Vehicle SET reserved = 1 WHERE vid = ?");
-			ps.setInt(1, vid);
+			rs.close();
+
+            int odometer = getOdometerByVid(vid);
+            addCardNumberToCards(cardNumber);
+            rid = (rid == 0) ? getRid() : rid;
+            Date now = new Date(new java.util.Date().getTime());
+
+            ps = connection.prepareStatement("INSERT INTO Rent(RID,VLICENSE,DLICENSE,DATETIME,FROMDATETIME,TODATETIME,ODOMETER,CARDNO,CONFNO) " +
+                    "VALUES (?,?,?,?,?,?,?,?,?)");
+            ps.setInt(1, rid);
+            rid++;
+            ps.setString(2, vlicense);
+            ps.setString(3, dlNumber);
+			ps.setString(4, now.toString());
+			ps.setString(5, fromDate);
+			ps.setString(6, toDate);
+			ps.setInt(7, odometer);
+			ps.setString(8, cardNumber);
+			ps.setNull(9, Types.VARCHAR);
 			ps.executeUpdate();
 			connection.commit();
-			ps.close();
 
-			ps = connection.prepareStatement("SELECT MAX(r.odometer) FROM Return r NATURAL JOIN Rent re WHERE re.vlicense = ?");
-			ps.setString(1, vlicense);
-			rs = ps.executeQuery();
-			int odometer = (rs.next() ? rs.getInt(1) : 0);
-			ps.close();
-
-			ps = connection.prepareStatement("INSERT INTO Rent VALUES (?,?,?,?,?,?,?,?,?)");
-			ps.setInt(1, Objects.hash(dlNumber));
-			ps.setString(2, vlicense);
-			Date now = new Date(new java.util.Date().getTime());
-			ps.setDate(3, now);
-			ps.setString(4, fromDate);
-			ps.setString(5, toDate);
-			ps.setInt(6, odometer);
-			ps.setString(7, cardNumber);
-			ps.executeUpdate();
-			connection.commit();
+            setVehicleToReserved(vid);
 
 			ps.close();
 			rs.close();
@@ -248,7 +274,44 @@ public class DatabaseConnectionHandler {
 		}
 	}
 
-	public String findVehicles(ArrayList<String> criteria) {
+    private void addCardNumberToCards(String cardNumber) throws SQLException {
+        PreparedStatement ps;
+        ResultSet rs;
+        ps = connection.prepareStatement("SELECT * FROM CARDS WHERE CARDNO = ?");
+        ps.setString(1, cardNumber);
+        rs = ps.executeQuery();
+        if (!rs.next()) {
+            PreparedStatement ps2 = connection.prepareStatement("INSERT INTO CARDS VALUES (?,?,?)");
+            ps2.setString(1, cardNumber);
+            ps2.setNull(2, Types.VARCHAR);
+            ps2.setNull(3, Types.VARCHAR);
+            ps2.executeUpdate();
+            connection.commit();
+            ps2.close();
+        }
+        ps.close();
+        rs.close();
+    }
+
+    private int getOdometerByVid(int vid) throws SQLException {
+        PreparedStatement ps;
+        ResultSet rs;
+        ps = connection.prepareStatement("SELECT odometer FROM VEHICLE WHERE VID = ?");
+        ps.setInt(1, vid);
+        rs = ps.executeQuery();
+        int odometer = (rs.next() ? rs.getInt(1) : 0);
+        ps.close();
+        rs.close();
+        return odometer;
+    }
+
+    private void setVehicleToReserved(int vid) throws SQLException {
+        PreparedStatement ps3 = connection.prepareStatement("UPDATE Vehicle SET reserved = 1 WHERE vid = ?");
+        ps3.setInt(1, vid);
+        ps3.executeUpdate();
+    }
+
+    public String findVehicles(ArrayList<String> criteria) {
 		Integer count = 0;
 		try {
 			String sql = "SELECT COUNT(*) FROM Vehicle WHERE reserved = 0";
@@ -326,39 +389,52 @@ public class DatabaseConnectionHandler {
 		return toReturn;
 	}
 
-	public int reserveVehicle(Integer confNo, String location, String vehicleType, Date fromDateTime,
+	public int reserveVehicle(String location, String vehicleType, Date fromDateTime,
 							  Date toDateTime, String customerName, Long customerDL) {
 		try {
-			PreparedStatement ps = connection.prepareStatement("INSERT INTO Reservations VALUES (?,?,?,?,?)");
-			Statement stmt = connection.createStatement();
-			ResultSet rs = stmt.executeQuery(
-					"SELECT vlicense FROM Vehicle WHERE reserved = 0 AND vtname = " + vehicleType);
-
+			PreparedStatement ps = connection.prepareStatement("INSERT INTO Reservations VALUES (?,?,?,?,?,?)");
+			PreparedStatement ps2 = connection.prepareStatement("SELECT vlicense FROM Vehicle WHERE reserved = 0 AND vtname = ?");
+			ps2.setString(1, vehicleType);
+			ResultSet rs = ps2.executeQuery();
+            rs.next();
+            confNo = (confNo == 0) ? getConfNo() : confNo;
+            confNo++;
 			ps.setString(1, confNo.toString());
 			ps.setString(2, vehicleType);
-			ps.setString(3, rs.getString(1)); // vlicense
+			String vlicense = rs.getString(1);
+			ps.setString(3, vlicense); // vlicense
 			ps.setString(4, customerDL.toString());
 			ps.setDate(5, fromDateTime); // from
 			ps.setDate(6, toDateTime); // to
+            ps2.close();
 
-			rs = stmt.executeQuery("SELECT * FROM Customer WHERE dlicense = " + customerDL.toString());
+            ps2 = connection.prepareStatement("SELECT * FROM Customer WHERE dlicense = ?");
+            ps2.setString(1, customerDL.toString());
+			rs = ps2.executeQuery();
 			if (!rs.next()) {
-				PreparedStatement ps2 = connection.prepareStatement("INSERT INTO Customer VALUES (?,?,?,?)");
-				ps2.setString(1, customerDL.toString());
-				ps2.setNull(2, Types.VARCHAR);
-				ps2.setString(3, customerName);
-				ps2.setNull(4, Types.VARCHAR);
-				ps2.executeUpdate();
+				PreparedStatement ps3 = connection.prepareStatement("INSERT INTO Customer VALUES (?,?,?,?)");
+				ps3.setString(1, customerDL.toString());
+				ps3.setNull(2, Types.VARCHAR);
+				ps3.setString(3, customerName);
+				ps3.setNull(4, Types.VARCHAR);
+				ps3.executeUpdate();
+				ps3.close();
 			}
+			// UPDATE CAR TO BE RESERVED, ASSUMES VLICENSE IS UNIQUE
+            ps2.close();
+			ps2 = connection.prepareStatement("UPDATE Vehicle SET reserved = 1 WHERE vlicense = ?");
+			ps2.setString(1, vlicense);
 
+			ps2.executeUpdate();
 			ps.executeUpdate();
 			connection.commit();
 
 			ps.close();
-			stmt.close();
+			ps2.close();
 			rs.close();
 		} catch (SQLException e) {
 			rollbackConnection();
+			return -1;
 		}
 		return confNo;
 	}
@@ -434,7 +510,7 @@ public class DatabaseConnectionHandler {
 															"FROM Rent r\n" +
 															"INNER JOIN Vehicle v ON v.vlicense = r.vlicense\n" +
 															"WHERE EXTRACT(DAY FROM r.date) = inputDate\n" +
-															"GROUP BY v.location, v.city, v.vtname    ");
+															"GROUP BY v.location, v.city, v.vtname");
 			ResultSetMetaData dailyRentalMd = dailyRental.getMetaData();
 			// TODO
 		} catch (SQLException e) {
