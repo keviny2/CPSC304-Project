@@ -111,6 +111,73 @@ public class DatabaseConnectionHandler {
 		
 		return result.toArray(new BranchModel[result.size()]);
 	}
+
+	public String findVehicles(ArrayList<String> criteria) {
+		Integer count = 0;
+		try {
+			String sql = "SELECT COUNT(*) FROM Vehicle WHERE";
+			for (int i = 0; i < criteria.size(); i++) {
+				if (i == criteria.size() - 1) {
+					sql += " " + criteria;
+				} else {
+					sql += " " + criteria + ",";
+				}
+			}
+			Statement stmt = connection.createStatement();
+			ResultSet rs = stmt.executeQuery(sql);
+
+			// get info on ResultSet
+			ResultSetMetaData rsmd = rs.getMetaData();
+
+			while(rs.next()) {
+				count++;
+			}
+
+			rs.close();
+			stmt.close();
+		} catch (SQLException e) {
+			return "";
+		}
+
+		return count.toString();
+	}
+
+	public String[][] getVehicles(ArrayList<String> criteria) {
+		ArrayList<String[]> toReturn = new ArrayList<>();
+		try {
+			String sql = "SELECT v.make, v.model, v.year, v.color, g.gasType, v.vtname" +
+						"FROM Vehicle NATURAL JOIN GasType WHERE";
+			for (int i = 0; i < criteria.size(); i++) {
+				if (i == criteria.size() - 1) {
+					sql += " " + criteria;
+				} else {
+					sql += " " + criteria + ",";
+				}
+			}
+			Statement stmt = connection.createStatement();
+			ResultSet rs = stmt.executeQuery(sql);
+
+			// get info on ResultSet
+			ResultSetMetaData rsmd = rs.getMetaData();
+
+
+			while(rs.next()) {
+				String[] myResult = {rs.getString(1), rs.getString(2),
+				rs.getString(3), rs.getString(4), rs.getString(5),
+				rs.getString(6), rs.getString(7)};
+				toReturn.add(myResult);
+			}
+
+			rs.close();
+			stmt.close();
+		} catch (SQLException e) {
+			String[] empty = {""};
+			toReturn.set(0, empty);
+			return (String[][]) toReturn.toArray();
+		}
+
+		return (String[][]) toReturn.toArray();
+	}
 	
 	public void updateBranch(int id, String name) {
 		try {

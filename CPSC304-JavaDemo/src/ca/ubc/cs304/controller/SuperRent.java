@@ -1,5 +1,8 @@
 package ca.ubc.cs304.controller;
 
+import ca.ubc.cs304.database.DatabaseConnectionHandler;
+import ca.ubc.cs304.ui.LoginWindow;
+
 public class SuperRent {
     /**
      * Main method called at launch time
