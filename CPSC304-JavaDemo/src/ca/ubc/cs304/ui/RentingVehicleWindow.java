@@ -17,6 +17,9 @@ public class RentingVehicleWindow extends JFrame implements ActionListener {
     private JTextField customerNameField;
     private JTextField customerDLField;
     private VehicleTypeNames vtNames = new VehicleTypeNames();
+    private JTextField cNumField;
+    private JTextField CDLNField;
+    private JFrame rentReservedWindow = new JFrame();
 
     private RentingVehicleDelegate delegate;
 
@@ -189,7 +192,6 @@ public class RentingVehicleWindow extends JFrame implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        try {
             if (e.getActionCommand().equals("rent")) {
                 if (!locationField.getText().trim().equals("")) {
                     if (vehicleTypeComboBox.getSelectedItem() != null) {
@@ -199,7 +201,10 @@ public class RentingVehicleWindow extends JFrame implements ActionListener {
                                     if (!customerDLField.getText().trim().equals("")) {
                                         // displays success message with conf num from what reserve func returns
                                         delegate.rentVehicle(locationField.getText(), (String) vehicleTypeComboBox.getSelectedItem(), fromDateTimeField.getText(), toDateTimeField.getText(), customerNameField.getText(), customerDLField.getText());
-                                        JOptionPane.showMessageDialog(new JFrame(), "You have reserved a vehicle!\n\nHere is your confirmation number: ", "Success", JOptionPane.INFORMATION_MESSAGE);
+                                        JOptionPane.showMessageDialog(new JFrame(), "You have successfully rented a vehicle!\n\nReceipt:\n" + "Location: " + locationField.getText() +
+                                                                                                                                                    "\nVehicle Type: " + vehicleTypeComboBox.getSelectedItem() +
+                                                                                                                                                        "\nPick up date & time: " + fromDateTimeField.getText() +
+                                                                                                                                                            "\nReturn date & time: " + toDateTimeField.getText(), "Success", JOptionPane.INFORMATION_MESSAGE);
                                         this.dispose();
                                     } else JOptionPane.showMessageDialog(new JFrame(), "Please enter your driver's license #", "Error", JOptionPane.ERROR_MESSAGE);
                                 } else JOptionPane.showMessageDialog(new JFrame(), "Please enter your full name", "Error", JOptionPane.ERROR_MESSAGE);
@@ -208,13 +213,95 @@ public class RentingVehicleWindow extends JFrame implements ActionListener {
                     } else JOptionPane.showMessageDialog(new JFrame(), "Please select the vehicle type", "Error", JOptionPane.ERROR_MESSAGE);
                 } else JOptionPane.showMessageDialog(new JFrame(), "Please enter the location", "Error", JOptionPane.ERROR_MESSAGE);
             }
-        } catch (NumberFormatException exception) {
-            JOptionPane.showMessageDialog(new JFrame(), "Please enter only numbers in the driver's license # field", "Error", JOptionPane.ERROR_MESSAGE);
-        }
         if (e.getActionCommand().equals("rentReserved")) {
-            JFrame rentReservedWindow = new JFrame();
             rentReservedWindow.setSize(300, 150);
+            rentReservedWindow.setTitle("Rent a Reserved Vehicle");
+
+            JLabel CILabel = new JLabel("Customer Information:");
+            JLabel cNumLabel = new JLabel("Confirmation #: ");
+            JLabel CDLNLabel = new JLabel("Driver's license #: ");
+
+            cNumField = new JTextField(10);
+            CDLNField = new JTextField(10);
+
+            JButton rentReservedButton2 = new JButton("Rent");
+
+            JPanel contentPane = new JPanel();
+            rentReservedWindow.setContentPane(contentPane);
+
+            // layout components using the GridBag layout manager
+            GridBagLayout gb = new GridBagLayout();
+            GridBagConstraints c = new GridBagConstraints();
+
+            contentPane.setLayout(gb);
+            contentPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+            // set the grid specs for all labels and objects
+
+            c.gridwidth = GridBagConstraints.REMAINDER;
+            c.insets = new Insets(10, 10, 10, 0);
+            c.anchor = GridBagConstraints.WEST;
+            gb.setConstraints(CILabel, c);
+            contentPane.add(CILabel);
+
+            c.gridwidth = GridBagConstraints.RELATIVE;
+            c.insets = new Insets(10, 10, 10, 0);
+            gb.setConstraints(cNumLabel, c);
+            contentPane.add(cNumLabel);
+
+            c.gridwidth = GridBagConstraints.REMAINDER;
+            c.insets = new Insets(10, 0, 10, 0);
+            c.anchor = GridBagConstraints.WEST;
+            gb.setConstraints(cNumField, c);
+            contentPane.add(cNumField);
+
+            c.gridwidth = GridBagConstraints.RELATIVE;
+            c.insets = new Insets(10, 10, 10, 0);
+            gb.setConstraints(CDLNLabel, c);
+            contentPane.add(CDLNLabel);
+
+            c.gridwidth = GridBagConstraints.REMAINDER;
+            c.insets = new Insets(10, 0, 10, 0);
+            gb.setConstraints(CDLNField, c);
+            contentPane.add(CDLNField);
+
+            c.gridwidth = GridBagConstraints.REMAINDER;
+            c.insets = new Insets(10, 0, 10, 10);
+            c.anchor = GridBagConstraints.CENTER;
+            gb.setConstraints(rentReservedButton2, c);
+            contentPane.add(rentReservedButton2);
+
+            // register objects with action event handler
+            rentReservedButton2.setActionCommand("rentReserved2");
+            rentReservedButton2.addActionListener(this);
+
+            // size the window to obtain a best fit for the components
+            rentReservedWindow.pack();
+
+            // center the frame
+            Dimension d = rentReservedWindow.getToolkit().getScreenSize();
+            Rectangle r = rentReservedWindow.getBounds();
+            rentReservedWindow.setLocation( (d.width - r.width)/2, (d.height - r.height)/2 );
+
+            // make the window visible
             rentReservedWindow.setVisible(true);
+
+            // place the cursor in the text field for the username
+            cNumField.requestFocus();
+            rentReservedWindow.setLocationRelativeTo(this);
+        }
+
+        if (e.getActionCommand().equals("rentReserved2")) {
+                if (!cNumField.getText().equals("")) {
+                    if (!CDLNField.getText().equals("")) {
+                        delegate.rentReservedVehicle(cNumField.getText(), CDLNField.getText());
+                        JOptionPane.showMessageDialog(new JFrame(), "You have successfully rented a vehicle!\n\nReceipt: " +
+                                                                                                                        "\nConfirmation #: " + cNumField.getText() +
+                                                                                                                            "\nDriver's license #: " + CDLNField.getText(), "Success", JOptionPane.INFORMATION_MESSAGE);
+
+                        rentReservedWindow.dispose();
+                    } else JOptionPane.showMessageDialog(new JFrame(), "Please enter your driver's license #", "Error", JOptionPane.ERROR_MESSAGE);
+                } else JOptionPane.showMessageDialog(new JFrame(), "Please enter your confirmation #", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 }
