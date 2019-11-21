@@ -27,7 +27,7 @@ public class RentingVehicle implements RentingVehicleDelegate {
             if (confNo.equals("")) {
                 rentReservedVehicle(confNo, dlNumber, fromDateTime, toDateTime, cardNumber, cardExpDate);
             } else {
-                dbHandler.doRentalNoReservation(location, vehicleType, fromDateTime, toDateTime, fullName, dlNumber);
+                dbHandler.doRentalNoReservation(location, vehicleType, fromDateTime, toDateTime, fullName, dlNumber, cardNumber);
             }
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(new JFrame(), e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -36,7 +36,7 @@ public class RentingVehicle implements RentingVehicleDelegate {
 
     public void rentReservedVehicle(String confirmation, String dlNumber, String fromDate, String toDate, String cardNumber, String cardExpDate) {
         try {
-            dbHandler.doRentalWithReservation(confirmation, dlNumber);
+            dbHandler.doRentalWithReservation(confirmation, dlNumber, cardNumber);
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(new JFrame(), e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }

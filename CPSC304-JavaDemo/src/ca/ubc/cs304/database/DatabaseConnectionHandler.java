@@ -1,7 +1,6 @@
 package ca.ubc.cs304.database;
 
 import ca.ubc.cs304.model.BranchModel;
-import oracle.jdbc.proxy.annotation.Pre;
 
 import java.sql.*;
 import java.text.DateFormat;
@@ -136,7 +135,7 @@ public class DatabaseConnectionHandler {
 		return ret;
 	}
 
-	public void doRentalWithReservation(String confirmation, String dlNumber) throws SQLException {
+	public void doRentalWithReservation(String confirmation, String dlNumber, String cardNumber) throws SQLException {
 		// 1. Get rid (hash dlicense)
 		// 2. get confNo, vtname, vlicense, dlicense, fromDateTime, toDateTime from Reservations
 		// 3. Generate now dateTime
@@ -163,7 +162,6 @@ public class DatabaseConnectionHandler {
 			ps.setString(1, vlicense);
 			rs = ps.executeQuery();
 			int odometer = (rs.next() ? rs.getInt(1) : 0);
-			String cardNo = "CARD NUM PLS";
 			ps.close();
 			rs.close();
 
@@ -175,7 +173,7 @@ public class DatabaseConnectionHandler {
 			ps.setString(5, fromDateTime);
 			ps.setString(6, toDateTime);
 			ps.setInt(7, odometer);
-			ps.setString(8, cardNo);
+			ps.setString(8, cardNumber);
 			ps.setString(9, confirmation);
 			ps.executeUpdate();
 			connection.commit();
@@ -186,8 +184,23 @@ public class DatabaseConnectionHandler {
 		}
 	}
 
+	public void registerCustomer(String fullName, String address, Long DLNumber) {
+		try {
+			PreparedStatement ps = connection.prepareStatement("INSERT INTO Customer VALUES (?,?,?,?)");
+			ps.setString(1, DLNumber.toString());
+			ps.setNull(2, Types.VARCHAR);
+			ps.setString(3, fullName);
+			ps.setString(4, address);
+			ps.executeUpdate();
+			connection.commit();
+			ps.close();
+		} catch (SQLException e) {
+			rollbackConnection();
+		}
+	}
+
 	public void doRentalNoReservation(String location, String vehicleType, String fromDate,
-									  String toDate, String fullName, String dlNumber) throws SQLException {
+									  String toDate, String fullName, String dlNumber, String cardNumber) throws SQLException {
 		try {
 			PreparedStatement ps = connection.prepareStatement("SELECT vid, vlicense FROM Vehicle WHERE vtname = ? AND location = ? AND reserved = 0");
 			ps.setString(1, vehicleType);
@@ -223,7 +236,7 @@ public class DatabaseConnectionHandler {
 			ps.setString(4, fromDate);
 			ps.setString(5, toDate);
 			ps.setInt(6, odometer);
-			ps.setString(7, "CARD NUMBER PLS"); // TODO: Card number.
+			ps.setString(7, cardNumber);
 			ps.executeUpdate();
 			connection.commit();
 
@@ -238,25 +251,22 @@ public class DatabaseConnectionHandler {
 	public String findVehicles(ArrayList<String> criteria) {
 		Integer count = 0;
 		try {
-			String sql = "SELECT COUNT(*) FROM Vehicle";
+			String sql = "SELECT COUNT(*) FROM Vehicle WHERE reserved = 0";
 			for (int i = 0; i < criteria.size(); i++) {
 				if (i == 0) {
-					sql += " WHERE";
+					sql += " AND";
 				}
 				if (i == criteria.size() - 1) {
-					sql += " " + criteria;
+					sql += " " + criteria.get(i) + "";
 				} else {
-					sql += " " + criteria + " AND";
+					sql += " " + criteria.get(i) + " AND";
 				}
 			}
 			Statement stmt = connection.createStatement();
 			ResultSet rs = stmt.executeQuery(sql);
 
-			// get info on ResultSet
-			ResultSetMetaData rsmd = rs.getMetaData();
-
 			while(rs.next()) {
-				count++;
+				count = rs.getInt(1);
 			}
 
 			rs.close();
@@ -271,16 +281,16 @@ public class DatabaseConnectionHandler {
 	public String[][] getVehicles(ArrayList<String> criteria) {
 		ArrayList<String[]> toReturn = new ArrayList<>();
 		try {
-			String sql = "SELECT v.make, v.model, v.year, v.color, g.gasType, v.vtname" +
-						"FROM Vehicle NATURAL JOIN GasType";
+			String sql = "SELECT v.make, v.model, v.year, v.color, g.gasType, v.vtname " +
+						"FROM Vehicle v NATURAL JOIN GasType g WHERE v.reserved = 0";
 			for (int i = 0; i < criteria.size(); i++) {
 				if (i == 0) {
-					sql += " WHERE";
+					sql += " AND";
 				}
 				if (i == criteria.size() - 1) {
-					sql += " " + criteria;
+					sql += " " + criteria.get(i);
 				} else {
-					sql += " " + criteria + " AND";
+					sql += " " + criteria.get(i) + " AND";
 				}
 			}
 			Statement stmt = connection.createStatement();
@@ -293,7 +303,7 @@ public class DatabaseConnectionHandler {
 			while(rs.next()) {
 				String[] myResult = {rs.getString(1), rs.getString(2),
 				rs.getString(3), rs.getString(4), rs.getString(5),
-				rs.getString(6), rs.getString(7)};
+				rs.getString(6)};
 				toReturn.add(myResult);
 			}
 
@@ -390,23 +400,40 @@ public class DatabaseConnectionHandler {
 		}
 	}
 
-//	private void signUp(String fullName, String dlNumber) {
-//		try {
-//			PreparedStatement ps = connection.prepareStatement("INSERT INTO Customer VALUES(?,?,?,?)");
-//			ps.setString(1, dlNumber);
-//			ps.setInt(2, id);
-//
-//			int rowCount = ps.executeUpdate();
-//			if (rowCount == 0) {
-//				System.out.println(WARNING_TAG + " Branch " + id + " does not exist!");
-//			}
-//
-//			connection.commit();
-//
-//			ps.close();
-//		} catch (SQLException e) {
-//			System.out.println(EXCEPTION_TAG + " " + e.getMessage());
-//			rollbackConnection();
-//		}
-//	}
+	public String[] generateDailyRentalReport() {
+		try {
+			Statement stmt1 = connection.createStatement();
+			Statement stmt2 = connection.createStatement();
+			Statement stmt3 = connection.createStatement();
+			Statement stmt4 = connection.createStatement();
+			ResultSet vehiclePerCat = stmt1.executeQuery("SELECT COUNT(v.vlicense) AS NumVehiclesCategory\n" +
+													"FROM Rent r\n" +
+													"INNER JOIN Vehicle v ON v.vlicense = r.vlicense\n" +
+													"WHERE EXTRACT(DAY FROM r.date) = inputDate\n" +
+													"GROUP BY v.vtname");
+			ResultSetMetaData vehiclePerCatMetaData = vehiclePerCat.getMetaData();
+			ResultSet resAtEachBranch = stmt2.executeQuery("SELECT COUNT(v.vlicense) AS NumVehiclesBranch\n" +
+													"FROM Rent r\n" +
+													"INNER JOIN Vehicle v ON v.vlicense = r.vlicense\n" +
+													"WHERE EXTRACT(DAY FROM r.date) = inputDate\n" +
+													"GROUP BY v.location, v.city");
+			ResultSetMetaData resultSetMetaData = resAtEachBranch.getMetaData();
+			ResultSet newRentals = stmt3.executeQuery("SELECT COUNT(*)\n" +
+															"FROM Rent r\n" +
+															"WHERE r.date = inputDateTime");
+			ResultSetMetaData newRentalsMetaData = newRentals.getMetaData();
+			ResultSet dailyRental = stmt4.executeQuery("SELECT *\n" +
+															"FROM Rent r\n" +
+															"INNER JOIN Vehicle v ON v.vlicense = r.vlicense\n" +
+															"WHERE EXTRACT(DAY FROM r.date) = inputDate\n" +
+															"GROUP BY v.location, v.city, v.vtname    ");
+			ResultSetMetaData dailyRentalMd = dailyRental.getMetaData();
+			// TODO
+		} catch (SQLException e) {
+			// TODO
+		}
+		String myStr = "";
+		String[] arr = {myStr};
+		return arr;
+	}
 }
