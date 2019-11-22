@@ -51,7 +51,7 @@ public class AvailableVehicles implements AvailableVehiclesDelegate {
 		window.setLocationRelativeTo(availableVehiclesWindow);
 
 		// replace the data array below with sql queries
-		String[] columnNames = { "Make", "Model", "Year", "Color", "Gas Type", "Vehicle Type" };
+		String[] columnNames = { "Make", "Model", "Year", "Color", "Gas Type", "Vehicle Type", "Location", "City"};
 		ArrayList<String> criteria = new ArrayList<>();
 		if (vehicleType != null && !vehicleType.trim().equals("")) {
 			criteria.add("vtname = \'" + vehicleType + "\'");

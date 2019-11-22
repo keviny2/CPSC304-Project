@@ -450,7 +450,7 @@ public class DatabaseConnectionHandler {
 	public String[][] getVehicles(ArrayList<String> criteria) {
 		ArrayList<String[]> toReturn = new ArrayList<>();
 		try {
-			String sql = "SELECT v.make, v.model, v.year, v.color, g.gasType, v.vtname " +
+			String sql = "SELECT v.make, v.model, v.year, v.color, g.gasType, v.vtname, v.LOCATION, v.CITY " +
 						"FROM Vehicle v NATURAL JOIN GasType g WHERE v.reserved = 0";
 			for (int i = 0; i < criteria.size(); i++) {
 				if (i == 0) {
@@ -472,7 +472,7 @@ public class DatabaseConnectionHandler {
 			while(rs.next()) {
 				String[] myResult = {rs.getString(1), rs.getString(2),
 				rs.getString(3), rs.getString(4), rs.getString(5),
-				rs.getString(6)};
+				rs.getString(6), rs.getString(7), rs.getString(8)};
 				toReturn.add(myResult);
 			}
 
