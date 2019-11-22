@@ -35,6 +35,8 @@ public class Reports implements ReportsDelegate {
 
     public void dailyRentalsBranch(String city, String location) {
         try {
+            // ret 1 = Vehicle Per Category, 2 = Rentals at each branch, 3 = total new rentals
+            // ColumnData.columns is non-empty, ColumnData.data may be empty if there is no data.
             ColumnData[] ret = dbHandler.generateDailyRentalReportByBranch(city, location);
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(new JFrame(), e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
