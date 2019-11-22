@@ -333,10 +333,10 @@ public class RentingVehicleWindow extends JFrame implements ActionListener {
 
             // make the window visible
             rentReservedWindow.setVisible(true);
+            rentReservedWindow.setLocationRelativeTo(this);
 
             // place the cursor in the text field for the username
             cNumField.requestFocus();
-            rentReservedWindow.setLocationRelativeTo(this);
         }
 
         if (e.getActionCommand().equals("rentReserved2")) {

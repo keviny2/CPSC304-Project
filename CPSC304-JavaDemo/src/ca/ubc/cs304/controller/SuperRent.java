@@ -21,6 +21,8 @@ public class SuperRent {
         ReturningVehicle returningVehicle = new ReturningVehicle(dbHandler);
         returningVehicle.start();
         login.requestFocus();
+        Reports reports = new Reports(dbHandler);
+        reports.start();
     }
 
 }
