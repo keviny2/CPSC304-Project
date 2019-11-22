@@ -711,4 +711,83 @@ public class DatabaseConnectionHandler {
 		}
 		return toReturn;
 	}
+
+	public ArrayList<String> getTableNames() throws SQLException {
+		Statement stmt = connection.createStatement();
+		ResultSet rs = stmt.executeQuery("SELECT table_name FROM user_tables ORDER BY table_name");
+		ArrayList<String> tableNames = new ArrayList<>();
+		while (rs.next()) {
+			tableNames.add(rs.getString(1));
+		}
+		return tableNames;
+	}
+
+	// TODO: @Ryan hook these up to UI where appropriate
+	// ASSUMES: all items in args are formatted properly (i.e. String are like 'string', integer are like 0) AND
+	// assumes tableName is NOT formatted (i.e. no quotes)
+	// Returns true if successful, false otherwise
+	public boolean insertDataIntoTable(String tableName, String... args) {
+		try {
+			String sql = "INSERT INTO " + tableName + " VALUES (";
+			for (int i = 0; i < args.length; i++) {
+				sql += args[i] + ",";
+			}
+			sql += ")";
+			Statement stmt = connection.createStatement();
+			stmt.executeUpdate(sql);
+			connection.commit();
+			stmt.close();
+		} catch (SQLException e) {
+			return false;
+		}
+		return true;
+	}
+
+	// ASSUMES: args are formatted like "vid = 123" or "name = 'Kohl'" as appropriate
+	// assumes tableName is NOT formatted (i.e. No quotes)
+	public boolean deleteDataFromTable(String tableName, String... args) {
+		try {
+			String sql = "DELETE FROM " + tableName;
+			for (int i = 0; i < args.length; i++) {
+				if (i == 0) {
+					sql += " WHERE";
+				} else {
+					sql += " AND";
+				}
+				sql += " " + args[i];
+			}
+			Statement stmt = connection.createStatement();
+			stmt.executeUpdate(sql);
+			connection.commit();
+			stmt.close();
+		} catch (SQLException e) {
+			return false;
+		}
+		return true;
+	}
+
+	// Returns a columnData object with columns set to column name and data set to the data of the table
+	// if table not found throws SQLException
+	public ColumnData viewTable(String tableName) throws SQLException {
+		String sql = "SELECT * FROM " + tableName;
+		Statement stmt = connection.createStatement();
+		ResultSet rs = stmt.executeQuery(sql);
+		ResultSetMetaData md = rs.getMetaData();
+
+		int numColumns = md.getColumnCount();
+		String[] columnNames = new String[numColumns];
+		for (int j = 0; j < numColumns; j++) {
+			columnNames[j] = md.getColumnName(j+1);
+		}
+		ArrayList<String[]> dataArr = new ArrayList<>();
+		while (rs.next()) {
+			String[] tuple = new String[numColumns];
+			for (int j = 0; j < numColumns; j++) {
+				tuple[j] = rs.getString(j+1);
+			}
+			dataArr.add(tuple);
+		}
+		ColumnData columnData = new ColumnData(columnNames, arrayListToStringArray(dataArr));
+		return columnData;
+	}
 }

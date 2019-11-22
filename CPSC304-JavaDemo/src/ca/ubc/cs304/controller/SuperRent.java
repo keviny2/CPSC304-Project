@@ -7,6 +7,8 @@ public class SuperRent {
     /**
      * Main method called at launch time
      */
+    // TODO: @Ryan Need to handle navigation, I don't think we can just let all the windows pop up. Clerk Menu and a Customer Menu with
+    // different buttons for all the views
     public static void main(String args[]) {
         LogInORACLE login = new LogInORACLE(dbHandler);
         login.start();
