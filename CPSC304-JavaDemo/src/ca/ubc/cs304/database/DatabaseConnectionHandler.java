@@ -20,7 +20,7 @@ public class DatabaseConnectionHandler {
 	private static final String ORACLE_URL = "jdbc:oracle:thin:@localhost:1522:stu";
 	private static final String EXCEPTION_TAG = "[EXCEPTION]";
 	private static final String WARNING_TAG = "[WARNING]";
-	private static final String pattern = "YYYY-MM-DD";
+	private static final String pattern = "yyyy-MM-dd";
 	private static final DateFormat df = new SimpleDateFormat(pattern);
 	private static Integer confNo = 0;
     private static Integer rid = 0;
@@ -593,6 +593,7 @@ public class DatabaseConnectionHandler {
 	public ColumnData[] generateDailyRentalReport() throws SQLException {
 		ColumnData[] toReturn = new ColumnData[3];
 		java.util.Date now = new java.util.Date();
+		String myDate = df.format(now);
 		String dateString = "%" + df.format(now) + "%";
 
 		PreparedStatement ps1 = connection.prepareStatement("SELECT v.vtname, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS NumVehiclesCategory " +
@@ -604,18 +605,20 @@ public class DatabaseConnectionHandler {
 		ResultSet vehiclePerCat = ps1.executeQuery();
 		ResultSetMetaData vehiclePerCatMetaData = vehiclePerCat.getMetaData();
 
-		PreparedStatement ps2 = connection.prepareStatement("SELECT v.location, v.city, v.VTNAME, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS NumVehiclesBranch " +
+		String sql = "SELECT v.location, v.city, v.VTNAME, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS NumVehiclesBranch " +
 				"FROM Rent r " +
 				"INNER JOIN Vehicle v ON v.vlicense = r.vlicense " +
 				"WHERE r.DATETIME LIKE ? " +
-				"GROUP BY v.location, v.city, v.VTNAME");
+				"GROUP BY v.location, v.city, v.VTNAME";
+		PreparedStatement ps2 = connection.prepareStatement(sql);
 		ps2.setString(1, dateString);
 		ResultSet rentalBranch = ps2.executeQuery();
 		ResultSetMetaData rentalBranchMetaData = rentalBranch.getMetaData();
 
-		PreparedStatement ps3 = connection.prepareStatement("SELECT CAST(COUNT(*) AS VARCHAR(100)) AS TotalRentalsAcrossCompany " +
+		sql = "SELECT CAST(COUNT(*) AS VARCHAR(100)) AS TotalRentalsAcrossCompany " +
 				"FROM Rent r " +
-				"WHERE r.dateTime LIKE ?");
+				"WHERE r.dateTime LIKE ?";
+		PreparedStatement ps3 = connection.prepareStatement(sql);
 		ps3.setString(1, dateString);
 		ResultSet newRentalTotal = ps3.executeQuery();
 		ResultSetMetaData newRentalMetaData = newRentalTotal.getMetaData();
@@ -640,6 +643,12 @@ public class DatabaseConnectionHandler {
 			ColumnData columnData = new ColumnData(columnNames, arrayListToStringArray(dataArr));
 			toReturn[i] = columnData;
 		}
+		ps1.close();
+		ps2.close();
+		ps3.close();
+		vehiclePerCat.close();
+		rentalBranch.close();
+		newRentalTotal.close();
 		return toReturn;
 	}
 
