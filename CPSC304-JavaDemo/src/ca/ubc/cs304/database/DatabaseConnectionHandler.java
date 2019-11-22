@@ -493,8 +493,8 @@ public class DatabaseConnectionHandler {
 		return toReturn;
 	}
 
-	public int reserveVehicle(String location, String vehicleType, Date fromDateTime,
-							  Date toDateTime, String customerName, Long customerDL) {
+	public int reserveVehicle(String location, String vehicleType, String fromDateTime,
+							  String toDateTime, String customerName, Long customerDL) {
 		try {
 			PreparedStatement ps = connection.prepareStatement("INSERT INTO Reservations VALUES (?,?,?,?,?,?)");
 			PreparedStatement ps2 = connection.prepareStatement("SELECT vlicense FROM Vehicle WHERE reserved = 0 AND vtname = ?");
@@ -508,8 +508,8 @@ public class DatabaseConnectionHandler {
 			String vlicense = rs.getString(1);
 			ps.setString(3, vlicense); // vlicense
 			ps.setString(4, customerDL.toString());
-			ps.setDate(5, fromDateTime); // from
-			ps.setDate(6, toDateTime); // to
+			ps.setString(5, fromDateTime); // from
+			ps.setString(6, toDateTime); // to
             ps2.close();
 
             ps2 = connection.prepareStatement("SELECT * FROM Customer WHERE dlicense = ?");

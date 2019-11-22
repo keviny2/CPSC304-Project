@@ -6,6 +6,7 @@ import ca.ubc.cs304.ui.MakeReservationWindow;
 
 import javax.swing.*;
 import java.sql.Date;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Objects;
 
@@ -30,11 +31,13 @@ public class MakeReservation implements MakeReservationDelegate {
         criteria.add("location = \'" + location + "\'");
 
         String result = dbHandler.findVehicles(criteria);
-        if (result == "") {
+        if (result.equals("")) {
+            JOptionPane.showMessageDialog(new JFrame(), "Invalid query", "Error", JOptionPane.ERROR_MESSAGE);
+            return -1;
+        } else if (result.equals("0")) {
+            JOptionPane.showMessageDialog(new JFrame(), "No matching vehicles found", "Error", JOptionPane.ERROR_MESSAGE);
             return -1;
         }
-        Date fromDate = Date.valueOf(fromDateTime);
-        Date toDate = Date.valueOf(toDateTime);
-        return dbHandler.reserveVehicle(location, vehicleType, fromDate, toDate, customerName, customerDL);
+        return dbHandler.reserveVehicle(location, vehicleType, fromDateTime, toDateTime, customerName, customerDL);
     }
 }
