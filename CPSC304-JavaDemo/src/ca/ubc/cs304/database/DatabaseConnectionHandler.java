@@ -712,6 +712,8 @@ public class DatabaseConnectionHandler {
 		return toReturn;
 	}
 
+	// Returns and arraylist of all of the table names
+	// TODO: @Ryan you can use this to get a list of the available tables for your view.
 	public ArrayList<String> getTableNames() throws SQLException {
 		Statement stmt = connection.createStatement();
 		ResultSet rs = stmt.executeQuery("SELECT table_name FROM user_tables ORDER BY table_name");
