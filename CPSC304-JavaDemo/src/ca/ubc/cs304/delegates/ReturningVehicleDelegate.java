@@ -1,5 +1,6 @@
 package ca.ubc.cs304.delegates;
+import java.util.ArrayList;
 
 public interface ReturningVehicleDelegate {
-    String[] returnVehicle(String dateTimeReturned, int odometerReading, boolean isTankFull);
+    ArrayList<String> returnVehicle(String dateTimeReturned, int odometerReading, boolean isTankFull);
 }

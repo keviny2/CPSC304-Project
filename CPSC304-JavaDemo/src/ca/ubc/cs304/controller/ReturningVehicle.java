@@ -22,24 +22,28 @@ public class ReturningVehicle implements ReturningVehicleDelegate {
         returningVehicleWindow.showFrame(this);
     }
 
-    // String[0] = confNo, String[1] =
+    // ArrayList = {rid, dateTimeReturned, value, howCalculate}
     // TODO: @Ryan put a vlicense parameter
-    public String[] returnVehicle(String dateTimeReturned, int odometerReading, boolean isTankFull) {
+    public ArrayList<String> returnVehicle(String dateTimeReturned, int odometerReading, boolean isTankFull) {
         String vlicense = "1";
+        ArrayList<String> returnInfo = new ArrayList<>();
         try {
-            dbHandler.isRented(vlicense);
-            ArrayList<String> retVal = dbHandler.getValue(vlicense, dateTimeReturned);
+            dbHandler.isRented(vlicense); //Check if the vehicle is rented
+            ArrayList<String> retVal = dbHandler.getValue(vlicense, dateTimeReturned); //retVal has value and howCalculated
             if(retVal.size() < 1){
                 throw new SQLException("Error computing value");
             }
             int value = Integer.parseInt(retVal.get(0));
             String howCalculate = retVal.get(1);
-            dbHandler.returnVehicle(dateTimeReturned, odometerReading, isTankFull, value);
+            int rid = dbHandler.getReturnId(vlicense);
+            dbHandler.returnVehicle(rid, dateTimeReturned, odometerReading, isTankFull, value); //Insert into table
+            returnInfo.add(0, Integer.toString(rid));
+            returnInfo.add(1, dateTimeReturned);
+            returnInfo.add(2, Integer.toString(value));
+            returnInfo.add(3, howCalculate);
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(new JFrame(), e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
-        System.out.println(odometerReading);
-        System.out.println(isTankFull);
-        return new String[0];
+        return returnInfo;
     }
 }
