@@ -28,7 +28,6 @@ public class Reports implements ReportsDelegate {
         // ColumnData.columns is non-empty, ColumnData.data may be empty if there is no data.
         try {
             ColumnData[] ret = dbHandler.generateDailyRentalReport();
-            int dummy = 0;
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(new JFrame(), e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
@@ -37,7 +36,6 @@ public class Reports implements ReportsDelegate {
     public void dailyRentalsBranch(String city, String location) {
         try {
             ColumnData[] ret = dbHandler.generateDailyRentalReportByBranch(city, location);
-            int dummy = 0;
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(new JFrame(), e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }

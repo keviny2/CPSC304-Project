@@ -181,7 +181,7 @@ public class ReportsWindow extends JFrame implements ActionListener {
             delegate.dailyRentals();
         } else if (e.getActionCommand().equals("dailyRentalsBranch")) {
             // TODO: @Ryan plug in city and location pls
-            delegate.dailyRentalsBranch("Smoky Lake", "AB");
+            delegate.dailyRentalsBranch("Akron", "OH");
         }
     }
 }

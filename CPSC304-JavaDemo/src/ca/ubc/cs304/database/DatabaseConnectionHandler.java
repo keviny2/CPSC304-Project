@@ -599,7 +599,7 @@ public class DatabaseConnectionHandler {
 		PreparedStatement ps1 = connection.prepareStatement("SELECT v.vtname, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS NumVehiclesCategory " +
 				"FROM Rent r " +
 				"INNER JOIN Vehicle v ON v.vlicense = r.vlicense " +
-				"WHERE r.fromdateTime LIKE ?" +
+				"WHERE r.DATETIME LIKE ?" +
 				"GROUP BY v.vtname");
 		ps1.setString(1, dateString);
 		ResultSet vehiclePerCat = ps1.executeQuery();
@@ -660,8 +660,8 @@ public class DatabaseConnectionHandler {
 		PreparedStatement ps1 = connection.prepareStatement("SELECT v.vtname, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS NumVehiclesCategory " +
 				"FROM Rent r " +
 				"INNER JOIN Vehicle v ON v.vlicense = r.vlicense " +
-				"WHERE r.fromdateTime LIKE ? AND v.CITY = ? AND v.LOCATION = ? " +
-				" BY v.vtname");
+				"WHERE r.DATETIME LIKE ? AND v.CITY = ? AND v.LOCATION = ? " +
+				"GROUP BY v.vtname");
 		ps1.setString(1, dateString);
 		ps1.setString(2, city);
 		ps1.setString(3, location);
@@ -681,7 +681,8 @@ public class DatabaseConnectionHandler {
 
 		PreparedStatement ps3 = connection.prepareStatement("SELECT CAST(COUNT(*) AS VARCHAR(100)) AS TotalRentalsFromBranch " +
 				"FROM Rent r " +
-				"WHERE r.dateTime LIKE ? AND v.CITY = ? AND v.LOCATION = ?");
+				"INNER JOIN Vehicle v ON v.vlicense = r.vlicense " +
+				"WHERE r.DATETIME LIKE ? AND v.CITY = ? AND v.LOCATION = ?");
 		ps3.setString(1, dateString);
 		ps3.setString(2, city);
 		ps3.setString(3, location);
