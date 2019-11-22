@@ -4,31 +4,31 @@
 -- the number of rentals at each branch, and the total number of new rentals across the whole company
 
 -- vehicles per category
-SELECT v.vtname, COUNT(v.vlicense) AS NumVehiclesCategory
+SELECT v.vtname, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS NumVehiclesCategory
 FROM Rent r
 INNER JOIN Vehicle v ON v.vlicense = r.vlicense
 WHERE r.fromdateTime LIKE '2019-08-02%'
 GROUP BY v.vtname
 
--- The above works
-
 -- rentals at each branch
-SELECT COUNT(v.vlicense) AS NumVehiclesBranch
+SELECT v.location, v.city, v.VTNAME, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS NumVehiclesBranch
 FROM Rent r
-INNER JOIN Vehicle v ON v.vlicense = r.vlicense
-WHERE EXTRACT(DAY FROM r.date) = inputDate
-GROUP BY v.location, v.city
+         INNER JOIN Vehicle v ON v.vlicense = r.vlicense
+WHERE r.DATETIME LIKE '%inputDate%'
+GROUP BY v.location, v.city, v.VTNAME
 
 -- total number of new rentals across whole company
-SELECT COUNT(*)
+SELECT CAST(COUNT(*) AS VARCHAR(100)) AS TotalRentalsAcrossCompany
 FROM Rent r
-WHERE r.dateTime = inputDateTime
+WHERE r.dateTime LIKE '%inputDateTime%'
 
--- information on all vehicles rented during the day
+-- The above works
+
+-- information on all vehicles rented during the day.... @Kohl I dont think we need this
 SELECT *
 FROM Rent r
 INNER JOIN Vehicle v ON v.vlicense = r.vlicense
-WHERE EXTRACT(DAY FROM r.date) = inputDate
+WHERE r.DATETIME LIKE '%inputDate%'
 GROUP BY v.location, v.city, v.vtname                  
 
 

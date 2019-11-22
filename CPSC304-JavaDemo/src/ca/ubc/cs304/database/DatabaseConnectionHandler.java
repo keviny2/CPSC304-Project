@@ -1,8 +1,10 @@
 package ca.ubc.cs304.database;
 
 import ca.ubc.cs304.model.BranchModel;
+import ca.ubc.cs304.model.ColumnData;
 import oracle.sql.TIMESTAMP;
 
+import javax.xml.transform.Result;
 import java.sql.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -588,40 +590,115 @@ public class DatabaseConnectionHandler {
 		}
 	}
 
-	public String[] generateDailyRentalReport() {
-		try {
-			Statement stmt1 = connection.createStatement();
-			Statement stmt2 = connection.createStatement();
-			Statement stmt3 = connection.createStatement();
-			Statement stmt4 = connection.createStatement();
-			ResultSet vehiclePerCat = stmt1.executeQuery("SELECT COUNT(v.vlicense) AS NumVehiclesCategory\n" +
-													"FROM Rent r\n" +
-													"INNER JOIN Vehicle v ON v.vlicense = r.vlicense\n" +
-													"WHERE EXTRACT(DAY FROM r.date) = inputDate\n" +
-													"GROUP BY v.vtname");
-			ResultSetMetaData vehiclePerCatMetaData = vehiclePerCat.getMetaData();
-			ResultSet resAtEachBranch = stmt2.executeQuery("SELECT COUNT(v.vlicense) AS NumVehiclesBranch\n" +
-													"FROM Rent r\n" +
-													"INNER JOIN Vehicle v ON v.vlicense = r.vlicense\n" +
-													"WHERE EXTRACT(DAY FROM r.date) = inputDate\n" +
-													"GROUP BY v.location, v.city");
-			ResultSetMetaData resultSetMetaData = resAtEachBranch.getMetaData();
-			ResultSet newRentals = stmt3.executeQuery("SELECT COUNT(*)\n" +
-															"FROM Rent r\n" +
-															"WHERE r.date = inputDateTime");
-			ResultSetMetaData newRentalsMetaData = newRentals.getMetaData();
-			ResultSet dailyRental = stmt4.executeQuery("SELECT *\n" +
-															"FROM Rent r\n" +
-															"INNER JOIN Vehicle v ON v.vlicense = r.vlicense\n" +
-															"WHERE EXTRACT(DAY FROM r.date) = inputDate\n" +
-															"GROUP BY v.location, v.city, v.vtname");
-			ResultSetMetaData dailyRentalMd = dailyRental.getMetaData();
-			// TODO
-		} catch (SQLException e) {
-			// TODO
+	public ColumnData[] generateDailyRentalReport() throws SQLException {
+		ColumnData[] toReturn = new ColumnData[3];
+		java.util.Date now = new java.util.Date();
+		String dateString = "%" + df.format(now) + "%";
+
+		PreparedStatement ps1 = connection.prepareStatement("SELECT v.vtname, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS NumVehiclesCategory " +
+				"FROM Rent r " +
+				"INNER JOIN Vehicle v ON v.vlicense = r.vlicense " +
+				"WHERE r.fromdateTime LIKE ?" +
+				"GROUP BY v.vtname");
+		ps1.setString(1, dateString);
+		ResultSet vehiclePerCat = ps1.executeQuery();
+		ResultSetMetaData vehiclePerCatMetaData = vehiclePerCat.getMetaData();
+
+		PreparedStatement ps2 = connection.prepareStatement("SELECT v.location, v.city, v.VTNAME, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS NumVehiclesBranch " +
+				"FROM Rent r " +
+				"INNER JOIN Vehicle v ON v.vlicense = r.vlicense " +
+				"WHERE r.DATETIME LIKE ? " +
+				"GROUP BY v.location, v.city, v.VTNAME");
+		ps2.setString(1, dateString);
+		ResultSet rentalBranch = ps2.executeQuery();
+		ResultSetMetaData rentalBranchMetaData = rentalBranch.getMetaData();
+
+		PreparedStatement ps3 = connection.prepareStatement("SELECT CAST(COUNT(*) AS VARCHAR(100)) AS TotalRentalsAcrossCompany " +
+				"FROM Rent r " +
+				"WHERE r.dateTime LIKE ?");
+		ps3.setString(1, dateString);
+		ResultSet newRentalTotal = ps3.executeQuery();
+		ResultSetMetaData newRentalMetaData = newRentalTotal.getMetaData();
+
+		ResultSetMetaData[] allMetaData = {vehiclePerCatMetaData, rentalBranchMetaData, newRentalMetaData};
+		ResultSet[] allResults = {vehiclePerCat, rentalBranch, newRentalTotal};
+		for (int i = 0; i < 3; i++) {
+			int numColumns = allMetaData[i].getColumnCount();
+			String[] columnNames = new String[numColumns];
+			for (int j = 0; j < numColumns; j++) {
+				columnNames[j] = allMetaData[i].getColumnName(j+1);
+			}
+			ResultSet rs = allResults[i];
+			ArrayList<String[]> dataArr = new ArrayList<>();
+			while (rs.next()) {
+				String[] tuple = new String[numColumns];
+				for (int j = 0; j < numColumns; j++) {
+					tuple[j] = rs.getString(j+1);
+				}
+				dataArr.add(tuple);
+			}
+			ColumnData columnData = new ColumnData(columnNames, arrayListToStringArray(dataArr));
+			toReturn[i] = columnData;
 		}
-		String myStr = "";
-		String[] arr = {myStr};
-		return arr;
+		return toReturn;
+	}
+
+	public ColumnData[] generateDailyRentalReportByBranch(String city, String location) throws SQLException {
+		ColumnData[] toReturn = new ColumnData[3];
+		java.util.Date now = new java.util.Date();
+		String dateString = "%" + df.format(now) + "%";
+
+		PreparedStatement ps1 = connection.prepareStatement("SELECT v.vtname, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS NumVehiclesCategory " +
+				"FROM Rent r " +
+				"INNER JOIN Vehicle v ON v.vlicense = r.vlicense " +
+				"WHERE r.fromdateTime LIKE ? AND v.CITY = ? AND v.LOCATION = ? " +
+				" BY v.vtname");
+		ps1.setString(1, dateString);
+		ps1.setString(2, city);
+		ps1.setString(3, location);
+		ResultSet vehiclePerCat = ps1.executeQuery();
+		ResultSetMetaData vehiclePerCatMetaData = vehiclePerCat.getMetaData();
+
+		PreparedStatement ps2 = connection.prepareStatement("SELECT v.location, v.city, v.VTNAME, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS NumVehiclesBranch " +
+				"FROM Rent r " +
+				"INNER JOIN Vehicle v ON v.vlicense = r.vlicense " +
+				"WHERE r.DATETIME LIKE ? AND v.CITY = ? AND v.LOCATION = ? " +
+				"GROUP BY v.location, v.city, v.VTNAME");
+		ps2.setString(1, dateString);
+		ps2.setString(2, city);
+		ps2.setString(3, location);
+		ResultSet rentalBranch = ps2.executeQuery();
+		ResultSetMetaData rentalBranchMetaData = rentalBranch.getMetaData();
+
+		PreparedStatement ps3 = connection.prepareStatement("SELECT CAST(COUNT(*) AS VARCHAR(100)) AS TotalRentalsFromBranch " +
+				"FROM Rent r " +
+				"WHERE r.dateTime LIKE ? AND v.CITY = ? AND v.LOCATION = ?");
+		ps3.setString(1, dateString);
+		ps3.setString(2, city);
+		ps3.setString(3, location);
+		ResultSet newRentalTotal = ps3.executeQuery();
+		ResultSetMetaData newRentalMetaData = newRentalTotal.getMetaData();
+
+		ResultSetMetaData[] allMetaData = {vehiclePerCatMetaData, rentalBranchMetaData, newRentalMetaData};
+		ResultSet[] allResults = {vehiclePerCat, rentalBranch, newRentalTotal};
+		for (int i = 0; i < 3; i++) {
+			int numColumns = allMetaData[i].getColumnCount();
+			String[] columnNames = new String[numColumns];
+			for (int j = 0; j < numColumns; j++) {
+				columnNames[j] = allMetaData[i].getColumnName(j+1);
+			}
+			ResultSet rs = allResults[i];
+			ArrayList<String[]> dataArr = new ArrayList<>();
+			while (rs.next()) {
+				String[] tuple = new String[numColumns];
+				for (int j = 0; j < numColumns; j++) {
+					tuple[j] = rs.getString(j+1);
+				}
+				dataArr.add(tuple);
+			}
+			ColumnData columnData = new ColumnData(columnNames, arrayListToStringArray(dataArr));
+			toReturn[i] = columnData;
+		}
+		return toReturn;
 	}
 }
