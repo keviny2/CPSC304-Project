@@ -136,13 +136,6 @@ public class AvailableVehiclesWindow extends JFrame implements ActionListener {
         NOACNumber.setActionCommand("details");
         NOACNumber.addActionListener(this);
 
-//        // anonymous inner class for closing the window
-//        this.addWindowListener(new WindowAdapter() {
-//            public void windowClosing(WindowEvent e) {
-//                System.exit(0);
-//            }
-//        });
-
         // size the window to obtain a best fit for the components
         this.pack();
 

@@ -142,6 +142,7 @@ public class ReturningVehicleWindow extends JFrame implements ActionListener {
                         int totalCost = 0;
                         String cNum = "1234";
                         delegate.returnVehicle(vlicenseField.getText(), dlicenseField.getText(), dateTimeReturnedField.getText(), Integer.parseInt(odometerReadingField.getText()), tankFullBox.isSelected());
+                        // This below is a success message along with a receipt, MAKE SURE TO RETURN CONFIRMATION IF IT EXISTS
                         JOptionPane.showMessageDialog(new JFrame(), "You have successfully returned a vehicle!\n\nReceipt:" +
                                 "\nDate & Time Returned: " + dateTimeReturnedField.getText() +
                                 "\nTotal cost: " + totalCost +

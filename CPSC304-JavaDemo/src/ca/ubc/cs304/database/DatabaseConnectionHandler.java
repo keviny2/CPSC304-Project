@@ -1,10 +1,8 @@
 package ca.ubc.cs304.database;
-
-import ca.ubc.cs304.model.BranchModel;
 import ca.ubc.cs304.model.ColumnData;
-import oracle.sql.TIMESTAMP;
 
-import javax.xml.transform.Result;
+import javax.swing.*;
+import java.awt.*;
 import java.sql.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -26,6 +24,7 @@ public class DatabaseConnectionHandler {
 	private static final DateFormat df = new SimpleDateFormat(pattern);
 	private static Integer confNo = 0;
     private static Integer rid = 0;
+    private static final LogInCred logInCred = new LogInCred();
 	
 	private Connection connection = null;
 	
@@ -37,93 +36,6 @@ public class DatabaseConnectionHandler {
 		} catch (SQLException e) {
 			System.out.println(EXCEPTION_TAG + " " + e.getMessage());
 		}
-	}
-	
-	public void close() {
-		try {
-			if (connection != null) {
-				connection.close();
-			}
-		} catch (SQLException e) {
-			System.out.println(EXCEPTION_TAG + " " + e.getMessage());
-		}
-	}
-
-	public void deleteBranch(int branchId) {
-		try {
-			PreparedStatement ps = connection.prepareStatement("DELETE FROM branch WHERE branch_id = ?");
-
-			int rowCount = ps.executeUpdate();
-			if (rowCount == 0) {
-				System.out.println(WARNING_TAG + " Branch " + branchId + " does not exist!");
-			}
-			
-			connection.commit();
-	
-			ps.close();
-		} catch (SQLException e) {
-			System.out.println(EXCEPTION_TAG + " " + e.getMessage());
-			rollbackConnection();
-		}
-	}
-	
-	public void insertBranch(BranchModel model) {
-		try {
-			PreparedStatement ps = connection.prepareStatement("INSERT INTO branch VALUES (?,?,?,?,?)");
-			ps.setInt(1, model.getId());
-			ps.setString(2, model.getName());
-			ps.setString(3, model.getAddress());
-			ps.setString(4, model.getCity());
-			if (model.getPhoneNumber() == 0) {
-				ps.setNull(5, java.sql.Types.INTEGER);
-			} else {
-				ps.setInt(5, model.getPhoneNumber());
-			}
-
-			ps.executeUpdate();
-			connection.commit();
-
-			ps.close();
-		} catch (SQLException e) {
-			System.out.println(EXCEPTION_TAG + " " + e.getMessage());
-			rollbackConnection();
-		}
-	}
-	
-	public BranchModel[] getBranchInfo() {
-		ArrayList<BranchModel> result = new ArrayList<BranchModel>();
-		
-		try {
-			Statement stmt = connection.createStatement();
-			ResultSet rs = stmt.executeQuery("SELECT * FROM branch");
-		
-    		// get info on ResultSet
-    		ResultSetMetaData rsmd = rs.getMetaData();
-
-    		System.out.println(" ");
-
-    		// display column names;
-    		for (int i = 0; i < rsmd.getColumnCount(); i++) {
-    			// get column name and print it
-    			System.out.printf("%-15s", rsmd.getColumnName(i + 1));
-    		}
-			
-			while(rs.next()) {
-				BranchModel model = new BranchModel(rs.getString("address"),
-													rs.getString("city"),
-													rs.getInt("id"),
-													rs.getString("name"),
-													rs.getInt("phonenumber"));
-				result.add(model);
-			}
-
-			rs.close();
-			stmt.close();
-		} catch (SQLException e) {
-			System.out.println(EXCEPTION_TAG + " " + e.getMessage());
-		}	
-		
-		return result.toArray(new BranchModel[result.size()]);
 	}
 
 	public String getReservation(String dlNumber) {
@@ -568,15 +480,36 @@ public class DatabaseConnectionHandler {
 		}	
 	}
 	
-	public boolean login(String username, String password) {
+	public boolean login() {
 		try {
 			if (connection != null) {
 				connection.close();
 			}
-	
-			connection = DriverManager.getConnection(ORACLE_URL, username, password);
+
+			JFrame loading = new JFrame();
+			JLabel loadingLabel = new JLabel("Loading... Please wait.");
+			loading.setTitle("SuperRent");
+			JPanel contentPane = new JPanel();
+			loading.setContentPane(contentPane);
+			GridBagLayout gb = new GridBagLayout();
+			GridBagConstraints c = new GridBagConstraints();
+			contentPane.setLayout(gb);
+			contentPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+			c.gridwidth = GridBagConstraints.RELATIVE;
+			c.insets = new Insets(25, 25, 25, 25);
+			c.anchor = GridBagConstraints.CENTER;
+			gb.setConstraints(loadingLabel, c);
+			contentPane.add(loadingLabel);
+			loading.pack();
+			Dimension d = loading.getToolkit().getScreenSize();
+			Rectangle r = loading.getBounds();
+			loading.setLocation( (d.width - r.width)/2, (d.height - r.height)/2 );
+			loading.setVisible(true);
+
+			connection = DriverManager.getConnection(ORACLE_URL, logInCred.getUsername(), logInCred.getPassword());
 			connection.setAutoCommit(false);
-	
+
+			loading.dispose();
 			System.out.println("\nConnected to Oracle!");
 			return true;
 		} catch (SQLException e) {
