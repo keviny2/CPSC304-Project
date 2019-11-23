@@ -1,5 +1,7 @@
 package ca.ubc.cs304.delegates;
 
+import ca.ubc.cs304.model.ColumnData;
+
 public interface ReportsDelegate {
     void dailyRentals();
 

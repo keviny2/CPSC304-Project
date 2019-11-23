@@ -63,7 +63,6 @@ public class AvailableVehicles implements AvailableVehiclesDelegate {
 		if (data.length == 0 || data[0].length == 0 || data[0][0] == "") {
 			JOptionPane.showMessageDialog(new JFrame(), "Invalid query", "Error", JOptionPane.ERROR_MESSAGE);
 		}
-		// String[][] data = { { "Honda", "Civic", "2018", "Blue", "Regular", "Standard" }, { "Honda", "CRV", "2012", "Black", "Regular", "SUV" } };
 
 		// create new table with above data
 		JTable table = new JTable(data, columnNames);
@@ -72,7 +71,7 @@ public class AvailableVehicles implements AvailableVehiclesDelegate {
 		// set the window to be scrollable and set some preferences
 		JScrollPane sp = new JScrollPane(table);
 		window.add(sp);
-		window.setSize(500,300);
+		window.setSize(650,300);
 		window.setVisible(true);
 		window.requestFocusInWindow();
 	}

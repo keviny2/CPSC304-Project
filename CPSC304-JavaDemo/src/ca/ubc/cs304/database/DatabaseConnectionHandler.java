@@ -1,8 +1,8 @@
 package ca.ubc.cs304.database;
-
-import ca.ubc.cs304.model.BranchModel;
 import ca.ubc.cs304.model.ColumnData;
 
+import javax.swing.*;
+import java.awt.*;
 import java.sql.*;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -13,6 +13,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * This class handles all database related transactions
@@ -25,7 +27,8 @@ public class DatabaseConnectionHandler {
 	private static final DateFormat df = new SimpleDateFormat(pattern);
 	private static Integer confNo = 0;
     private static Integer rid = 0;
-	
+    private static final LogInCred logInCred = new LogInCred();
+
 	private Connection connection = null;
 	
 	public DatabaseConnectionHandler() {
@@ -36,93 +39,6 @@ public class DatabaseConnectionHandler {
 		} catch (SQLException e) {
 			System.out.println(EXCEPTION_TAG + " " + e.getMessage());
 		}
-	}
-	
-	public void close() {
-		try {
-			if (connection != null) {
-				connection.close();
-			}
-		} catch (SQLException e) {
-			System.out.println(EXCEPTION_TAG + " " + e.getMessage());
-		}
-	}
-
-	public void deleteBranch(int branchId) {
-		try {
-			PreparedStatement ps = connection.prepareStatement("DELETE FROM branch WHERE branch_id = ?");
-
-			int rowCount = ps.executeUpdate();
-			if (rowCount == 0) {
-				System.out.println(WARNING_TAG + " Branch " + branchId + " does not exist!");
-			}
-			
-			connection.commit();
-	
-			ps.close();
-		} catch (SQLException e) {
-			System.out.println(EXCEPTION_TAG + " " + e.getMessage());
-			rollbackConnection();
-		}
-	}
-	
-	public void insertBranch(BranchModel model) {
-		try {
-			PreparedStatement ps = connection.prepareStatement("INSERT INTO branch VALUES (?,?,?,?,?)");
-			ps.setInt(1, model.getId());
-			ps.setString(2, model.getName());
-			ps.setString(3, model.getAddress());
-			ps.setString(4, model.getCity());
-			if (model.getPhoneNumber() == 0) {
-				ps.setNull(5, java.sql.Types.INTEGER);
-			} else {
-				ps.setInt(5, model.getPhoneNumber());
-			}
-
-			ps.executeUpdate();
-			connection.commit();
-
-			ps.close();
-		} catch (SQLException e) {
-			System.out.println(EXCEPTION_TAG + " " + e.getMessage());
-			rollbackConnection();
-		}
-	}
-	
-	public BranchModel[] getBranchInfo() {
-		ArrayList<BranchModel> result = new ArrayList<BranchModel>();
-		
-		try {
-			Statement stmt = connection.createStatement();
-			ResultSet rs = stmt.executeQuery("SELECT * FROM branch");
-		
-    		// get info on ResultSet
-    		ResultSetMetaData rsmd = rs.getMetaData();
-
-    		System.out.println(" ");
-
-    		// display column names;
-    		for (int i = 0; i < rsmd.getColumnCount(); i++) {
-    			// get column name and print it
-    			System.out.printf("%-15s", rsmd.getColumnName(i + 1));
-    		}
-			
-			while(rs.next()) {
-				BranchModel model = new BranchModel(rs.getString("address"),
-													rs.getString("city"),
-													rs.getInt("id"),
-													rs.getString("name"),
-													rs.getInt("phonenumber"));
-				result.add(model);
-			}
-
-			rs.close();
-			stmt.close();
-		} catch (SQLException e) {
-			System.out.println(EXCEPTION_TAG + " " + e.getMessage());
-		}	
-		
-		return result.toArray(new BranchModel[result.size()]);
 	}
 
 	public String getReservation(String dlNumber) {
@@ -597,6 +513,7 @@ public class DatabaseConnectionHandler {
         PreparedStatement ps3 = connection.prepareStatement("UPDATE Vehicle SET reserved = 1 WHERE vid = ?");
         ps3.setInt(1, vid);
         ps3.executeUpdate();
+        connection.commit();
     }
 
     public String findVehicles(ArrayList<String> criteria) {
@@ -617,7 +534,7 @@ public class DatabaseConnectionHandler {
 			ResultSet rs = stmt.executeQuery(sql);
 
 			while(rs.next()) {
-				count = rs.getInt(1);
+				count = Integer.parseInt(rs.getString(1));
 			}
 
 			rs.close();
@@ -747,15 +664,36 @@ public class DatabaseConnectionHandler {
 		}	
 	}
 	
-	public boolean login(String username, String password) {
+	public boolean login() {
 		try {
 			if (connection != null) {
 				connection.close();
 			}
-	
-			connection = DriverManager.getConnection(ORACLE_URL, username, password);
+
+			JFrame loading = new JFrame();
+			JLabel loadingLabel = new JLabel("Loading... Please wait.");
+			loading.setTitle("SuperRent");
+			JPanel contentPane = new JPanel();
+			loading.setContentPane(contentPane);
+			GridBagLayout gb = new GridBagLayout();
+			GridBagConstraints c = new GridBagConstraints();
+			contentPane.setLayout(gb);
+			contentPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+			c.gridwidth = GridBagConstraints.RELATIVE;
+			c.insets = new Insets(25, 25, 25, 25);
+			c.anchor = GridBagConstraints.CENTER;
+			gb.setConstraints(loadingLabel, c);
+			contentPane.add(loadingLabel);
+			loading.pack();
+			Dimension d = loading.getToolkit().getScreenSize();
+			Rectangle r = loading.getBounds();
+			loading.setLocation( (d.width - r.width)/2, (d.height - r.height)/2 );
+			loading.setVisible(true);
+
+			connection = DriverManager.getConnection(ORACLE_URL, logInCred.getUsername(), logInCred.getPassword());
 			connection.setAutoCommit(false);
-	
+
+			loading.dispose();
 			System.out.println("\nConnected to Oracle!");
 			return true;
 		} catch (SQLException e) {
@@ -775,33 +713,97 @@ public class DatabaseConnectionHandler {
 	public ColumnData[] generateDailyRentalReport() throws SQLException {
 		ColumnData[] toReturn = new ColumnData[3];
 		java.util.Date now = new java.util.Date();
-		String myDate = df.format(now);
 		String dateString = "%" + df.format(now) + "%";
 
-		PreparedStatement ps1 = connection.prepareStatement("SELECT v.vtname, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS NumVehiclesCategory " +
+		PreparedStatement ps1 = connection.prepareStatement("SELECT v.vtname AS Vehicle_Type, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS Number_Of_Vehicles " +
 				"FROM Rent r " +
 				"INNER JOIN Vehicle v ON v.vlicense = r.vlicense " +
-				"WHERE r.DATETIME LIKE ?" +
+				"WHERE r.FROMDATETIME LIKE ? " +
 				"GROUP BY v.vtname");
 		ps1.setString(1, dateString);
 		ResultSet vehiclePerCat = ps1.executeQuery();
 		ResultSetMetaData vehiclePerCatMetaData = vehiclePerCat.getMetaData();
 
-		String sql = "SELECT v.location, v.city, v.VTNAME, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS NumVehiclesBranch " +
+		String sql = "SELECT v.location, v.city, v.VTNAME AS Vehicle_Type, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS Number_Of_Vehicles " +
 				"FROM Rent r " +
 				"INNER JOIN Vehicle v ON v.vlicense = r.vlicense " +
-				"WHERE r.DATETIME LIKE ? " +
+				"WHERE r.FROMDATETIME LIKE ? " +
 				"GROUP BY v.location, v.city, v.VTNAME";
 		PreparedStatement ps2 = connection.prepareStatement(sql);
 		ps2.setString(1, dateString);
 		ResultSet rentalBranch = ps2.executeQuery();
 		ResultSetMetaData rentalBranchMetaData = rentalBranch.getMetaData();
 
-		sql = "SELECT CAST(COUNT(*) AS VARCHAR(100)) AS TotalRentalsAcrossCompany " +
+		sql = "SELECT CAST(COUNT(*) AS VARCHAR(100)) AS Total_Rentals_Across_Company " +
 				"FROM Rent r " +
-				"WHERE r.dateTime LIKE ?";
+				"WHERE r.FROMDATETIME LIKE ?";
 		PreparedStatement ps3 = connection.prepareStatement(sql);
 		ps3.setString(1, dateString);
+		ResultSet newRentalTotal = ps3.executeQuery();
+		ResultSetMetaData newRentalMetaData = newRentalTotal.getMetaData();
+
+		ResultSetMetaData[] allMetaData = {vehiclePerCatMetaData, rentalBranchMetaData, newRentalMetaData};
+		ResultSet[] allResults = {vehiclePerCat, rentalBranch, newRentalTotal};
+		for (int i = 0; i < 3; i++) {
+			int numColumns = allMetaData[i].getColumnCount();
+			String[] columnNames = new String[numColumns];
+			for (int j = 0; j < numColumns; j++) {
+				columnNames[j] = allMetaData[i].getColumnName(j+1);
+			}
+			ResultSet rs = allResults[i];
+			ArrayList<String[]> dataArr = new ArrayList<>();
+			while (rs.next()) {
+				String[] tuple = new String[numColumns];
+				for (int j = 0; j < numColumns; j++) {
+					tuple[j] = rs.getString(j+1);
+				}
+				dataArr.add(tuple);
+			}
+			ColumnData columnData = new ColumnData(columnNames, arrayListToStringArray(dataArr));
+			toReturn[i] = columnData;
+		}
+		ps1.close();
+		ps2.close();
+		ps3.close();
+		vehiclePerCat.close();
+		rentalBranch.close();
+		newRentalTotal.close();
+		return toReturn;
+	}
+
+	public ColumnData[] generateDailyReturnsReport() throws SQLException {
+		ColumnData[] toReturn = new ColumnData[3];
+		java.util.Date now = new java.util.Date();
+		String dateString = "%" + df.format(now) + "%";
+
+		PreparedStatement ps1 = connection.prepareStatement("SELECT v.vtname AS Vehicle_Type, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS Number_Of_Vehicles, SUM(re.value) AS Revenue " +
+				"FROM Return re " +
+				"INNER JOIN Rent r ON r.rid = re.rid " +
+				"INNER JOIN Vehicle v ON v.vlicense = r.vlicense " +
+				"WHERE r.FROMDATETIME LIKE ? " +
+				"GROUP BY v.vtname");
+		ps1.setString(1, "%2019%");
+		ResultSet vehiclePerCat = ps1.executeQuery();
+		ResultSetMetaData vehiclePerCatMetaData = vehiclePerCat.getMetaData();
+
+		String sql = "SELECT v.location, v.city, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS Number_Of_Vehicles, SUM(re.value) AS Revenue_Of_Branch " +
+				"FROM Return re " +
+				"INNER JOIN Rent r ON r.rid = re.rid " +
+				"INNER JOIN Vehicle v ON v.vlicense = r.vlicense " +
+				"WHERE r.FROMDATETIME LIKE ? " +
+				"GROUP BY v.location, v.city";
+		PreparedStatement ps2 = connection.prepareStatement(sql);
+		ps2.setString(1, "%2019%");
+		ResultSet rentalBranch = ps2.executeQuery();
+		ResultSetMetaData rentalBranchMetaData = rentalBranch.getMetaData();
+
+		sql = "SELECT CAST(COUNT(*) AS VARCHAR(100)) AS Number_Of_Vehicles, SUM(re.value) AS Grand_Total_Revenue " +
+				"FROM Return re " +
+				"INNER JOIN Rent r ON r.rid = re.rid " +
+				"INNER JOIN Vehicle v ON v.vlicense = r.vlicense " +
+				"WHERE r.FROMDATETIME LIKE ?";
+		PreparedStatement ps3 = connection.prepareStatement(sql);
+		ps3.setString(1, "%2019%");
 		ResultSet newRentalTotal = ps3.executeQuery();
 		ResultSetMetaData newRentalMetaData = newRentalTotal.getMetaData();
 
@@ -839,10 +841,10 @@ public class DatabaseConnectionHandler {
 		java.util.Date now = new java.util.Date();
 		String dateString = "%" + df.format(now) + "%";
 
-		PreparedStatement ps1 = connection.prepareStatement("SELECT v.vtname, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS NumVehiclesCategory " +
+		PreparedStatement ps1 = connection.prepareStatement("SELECT v.vtname AS Vehicle_Type, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS Number_Of_Vehicle " +
 				"FROM Rent r " +
 				"INNER JOIN Vehicle v ON v.vlicense = r.vlicense " +
-				"WHERE r.DATETIME LIKE ? AND v.CITY = ? AND v.LOCATION = ? " +
+				"WHERE r.FROMDATETIME LIKE ? AND v.CITY = ? AND v.LOCATION = ? " +
 				"GROUP BY v.vtname");
 		ps1.setString(1, dateString);
 		ps1.setString(2, city);
@@ -850,10 +852,10 @@ public class DatabaseConnectionHandler {
 		ResultSet vehiclePerCat = ps1.executeQuery();
 		ResultSetMetaData vehiclePerCatMetaData = vehiclePerCat.getMetaData();
 
-		PreparedStatement ps2 = connection.prepareStatement("SELECT v.location, v.city, v.VTNAME, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS NumVehiclesBranch " +
+		PreparedStatement ps2 = connection.prepareStatement("SELECT v.VTNAME AS Vehicle_Type, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS Number_Of_Vehicle " +
 				"FROM Rent r " +
 				"INNER JOIN Vehicle v ON v.vlicense = r.vlicense " +
-				"WHERE r.DATETIME LIKE ? AND v.CITY = ? AND v.LOCATION = ? " +
+				"WHERE r.FROMDATETIME LIKE ? AND v.CITY = ? AND v.LOCATION = ? " +
 				"GROUP BY v.location, v.city, v.VTNAME");
 		ps2.setString(1, dateString);
 		ps2.setString(2, city);
@@ -861,10 +863,10 @@ public class DatabaseConnectionHandler {
 		ResultSet rentalBranch = ps2.executeQuery();
 		ResultSetMetaData rentalBranchMetaData = rentalBranch.getMetaData();
 
-		PreparedStatement ps3 = connection.prepareStatement("SELECT CAST(COUNT(*) AS VARCHAR(100)) AS TotalRentalsFromBranch " +
+		PreparedStatement ps3 = connection.prepareStatement("SELECT CAST(COUNT(*) AS VARCHAR(100)) AS Total_Rentals_From_Branch " +
 				"FROM Rent r " +
 				"INNER JOIN Vehicle v ON v.vlicense = r.vlicense " +
-				"WHERE r.DATETIME LIKE ? AND v.CITY = ? AND v.LOCATION = ?");
+				"WHERE r.FROMDATETIME LIKE ? AND v.CITY = ? AND v.LOCATION = ?");
 		ps3.setString(1, dateString);
 		ps3.setString(2, city);
 		ps3.setString(3, location);
@@ -894,6 +896,75 @@ public class DatabaseConnectionHandler {
 		return toReturn;
 	}
 
+	public ColumnData[] generateDailyReturnsReportByBranch(String city, String location) throws SQLException {
+		ColumnData[] toReturn = new ColumnData[3];
+		java.util.Date now = new java.util.Date();
+		String dateString = "%" + df.format(now) + "%";
+
+		PreparedStatement ps1 = connection.prepareStatement("SELECT v.vtname AS Vehicle_Type, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS Number_Of_Vehicles, SUM(re.value) AS Revenue " +
+				"FROM Return re " +
+				"INNER JOIN Rent r ON r.rid = re.rid " +
+				"INNER JOIN Vehicle v ON v.vlicense = r.vlicense " +
+				"WHERE r.FROMDATETIME LIKE ? AND v.location = ? AND v.city = ? " +
+				"GROUP BY v.vtname");
+		ps1.setString(1, "%2019%");
+		ps1.setString(2, location);
+		ps1.setString(3, city);
+		ResultSet vehiclePerCat = ps1.executeQuery();
+		ResultSetMetaData vehiclePerCatMetaData = vehiclePerCat.getMetaData();
+
+		PreparedStatement ps2 = connection.prepareStatement("SELECT v.location, v.city, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS Number_Of_Vehicles, SUM(re.value) AS Revenue_Of_Branch " +
+				"FROM Return re " +
+				"INNER JOIN Rent r ON r.rid = re.rid " +
+				"INNER JOIN Vehicle v ON v.vlicense = r.vlicense " +
+				"WHERE r.FROMDATETIME LIKE ? AND v.location = ? AND v.city = ? " +
+				"GROUP BY v.location, v.city");
+		ps2.setString(1, "%2019%");
+		ps2.setString(2, location);
+		ps2.setString(3, city);
+		ResultSet rentalBranch = ps2.executeQuery();
+		ResultSetMetaData rentalBranchMetaData = rentalBranch.getMetaData();
+
+		PreparedStatement ps3 = connection.prepareStatement("SELECT CAST(COUNT(*) AS VARCHAR(100)) AS Number_Of_Vehicles, SUM(re.value) AS Grand_Total_Revenue_From_Branch " +
+				"FROM Return re " +
+				"INNER JOIN Rent r ON r.rid = re.rid " +
+				"INNER JOIN Vehicle v ON v.vlicense = r.vlicense " +
+				"WHERE r.FROMDATETIME LIKE ? AND v.location = ? AND v.city = ?");
+		ps3.setString(1, "%2019%");
+		ps3.setString(2, location);
+		ps3.setString(3, city);
+		ResultSet newRentalTotal = ps3.executeQuery();
+		ResultSetMetaData newRentalMetaData = newRentalTotal.getMetaData();
+
+		ResultSetMetaData[] allMetaData = {vehiclePerCatMetaData, rentalBranchMetaData, newRentalMetaData};
+		ResultSet[] allResults = {vehiclePerCat, rentalBranch, newRentalTotal};
+		for (int i = 0; i < 3; i++) {
+			int numColumns = allMetaData[i].getColumnCount();
+			String[] columnNames = new String[numColumns];
+			for (int j = 0; j < numColumns; j++) {
+				columnNames[j] = allMetaData[i].getColumnName(j+1);
+			}
+			ResultSet rs = allResults[i];
+			ArrayList<String[]> dataArr = new ArrayList<>();
+			while (rs.next()) {
+				String[] tuple = new String[numColumns];
+				for (int j = 0; j < numColumns; j++) {
+					tuple[j] = rs.getString(j+1);
+				}
+				dataArr.add(tuple);
+			}
+			ColumnData columnData = new ColumnData(columnNames, arrayListToStringArray(dataArr));
+			toReturn[i] = columnData;
+		}
+		ps1.close();
+		ps2.close();
+		ps3.close();
+		vehiclePerCat.close();
+		rentalBranch.close();
+		newRentalTotal.close();
+		return toReturn;
+	}
+
 	// Returns and arraylist of all of the table names
 	// TODO: @Ryan you can use this to get a list of the available tables for your view.
 	public ArrayList<String> getTableNames() throws SQLException {
@@ -910,43 +981,34 @@ public class DatabaseConnectionHandler {
 	// ASSUMES: all items in args are formatted properly (i.e. String are like 'string', integer are like 0) AND
 	// assumes tableName is NOT formatted (i.e. no quotes)
 	// Returns true if successful, false otherwise
-	public boolean insertDataIntoTable(String tableName, String... args) {
-		try {
-			String sql = "INSERT INTO " + tableName + " VALUES (";
-			for (int i = 0; i < args.length; i++) {
-				sql += args[i] + ",";
-			}
-			sql += ")";
-			Statement stmt = connection.createStatement();
-			stmt.executeUpdate(sql);
-			connection.commit();
-			stmt.close();
-		} catch (SQLException e) {
-			return false;
-		}
+	public boolean insertDataIntoTable(String tableName, String values) throws SQLException {
+		String sql = "INSERT INTO " + tableName + " VALUES (";
+		sql += values + ")";
+		Statement stmt = connection.createStatement();
+		stmt.executeUpdate(sql);
+		connection.commit();
+		stmt.close();
 		return true;
 	}
 
 	// ASSUMES: args are formatted like "vid = 123" or "name = 'Kohl'" as appropriate
 	// assumes tableName is NOT formatted (i.e. No quotes)
-	public boolean deleteDataFromTable(String tableName, String... args) {
-		try {
-			String sql = "DELETE FROM " + tableName;
-			for (int i = 0; i < args.length; i++) {
-				if (i == 0) {
-					sql += " WHERE";
-				} else {
-					sql += " AND";
-				}
-				sql += " " + args[i];
+	public boolean deleteDataFromTable(String tableName, String conditions) throws SQLException {
+		String sql = "DELETE FROM " + tableName;
+		List<String> conditionList = Arrays.asList(conditions.split(","));
+
+		for (int i = 0; i < conditionList.size(); i++) {
+			if (i == 0) {
+				sql += " WHERE";
+			} else {
+				sql += " AND";
 			}
-			Statement stmt = connection.createStatement();
-			stmt.executeUpdate(sql);
-			connection.commit();
-			stmt.close();
-		} catch (SQLException e) {
-			return false;
+			sql += " " + conditionList.get(i);
 		}
+		Statement stmt = connection.createStatement();
+		stmt.executeUpdate(sql);
+		connection.commit();
+		stmt.close();
 		return true;
 	}
 

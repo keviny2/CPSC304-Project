@@ -32,7 +32,7 @@ public class SignUpWindow extends JFrame implements ActionListener {
         addressField = new JTextField(11);
         DLNumberField = new JTextField(9);
 
-        JButton signUpButton = new JButton("Sign up");
+        JButton signUpButton = new JButton("Register");
 
         JPanel contentPane = new JPanel();
         this.setContentPane(contentPane);

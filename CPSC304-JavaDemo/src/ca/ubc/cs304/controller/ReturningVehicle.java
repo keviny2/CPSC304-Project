@@ -23,9 +23,8 @@ public class ReturningVehicle implements ReturningVehicleDelegate {
     }
 
     // ArrayList = {rid, dateTimeReturned, value, howCalculate}
-    // TODO: @Ryan put a vlicense parameter
-    public ArrayList<String> returnVehicle(String dateTimeReturned, int odometerReading, boolean isTankFull) {
-        String vlicense = "1";
+    public ArrayList<String> returnVehicle(String vlicense, String dlicense, String dateTimeReturned, int odometerReading, boolean isTankFull) {
+        String vlicense1 = "1";
         ArrayList<String> returnInfo = new ArrayList<>();
         try {
             dbHandler.isRented(vlicense); //Check if the vehicle is rented
