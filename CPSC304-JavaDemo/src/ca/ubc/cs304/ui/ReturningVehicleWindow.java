@@ -10,6 +10,8 @@ import ca.ubc.cs304.ui.utils.VehicleTypeNames;
 
 public class ReturningVehicleWindow extends JFrame implements ActionListener {
 
+    private JTextField vlicenseField;
+    private JTextField dlicenseField;
     private JTextField dateTimeReturnedField;
     private JTextField odometerReadingField;
     private JCheckBox tankFullBox;
@@ -24,6 +26,8 @@ public class ReturningVehicleWindow extends JFrame implements ActionListener {
         this.delegate = delegate;
 
         // declare all labels here
+        JLabel vlicenseLabel = new JLabel("Vehicle License Plate: ");
+        JLabel dlicenseLabel = new JLabel("Driver's license #: ");
         JLabel dateTimeReturendLabel = new JLabel("Date & Time Returned: ");
         JLabel odometerReadingLabel = new JLabel("Odometer Reading: ");
         JLabel isTankFullLabel = new JLabel("Is gas tank full?: ");
@@ -36,6 +40,8 @@ public class ReturningVehicleWindow extends JFrame implements ActionListener {
         tankFullBox = new JCheckBox();
         dateTimeReturnedField = new JTextField(10);
         odometerReadingField = new JTextField(10);
+        vlicenseField = new JTextField(10);
+        dlicenseField = new JTextField(10);
 
         JButton returnButton = new JButton("Return");
 
@@ -53,31 +59,51 @@ public class ReturningVehicleWindow extends JFrame implements ActionListener {
 
         c.gridwidth = GridBagConstraints.RELATIVE;
         c.insets = new Insets(10, 10, 10, 0);
+        gb.setConstraints(vlicenseLabel, c);
+        contentPane.add(vlicenseLabel);
+
+        c.gridwidth = GridBagConstraints.REMAINDER;
+        c.insets = new Insets(10, 0, 10, 0);
+        gb.setConstraints(vlicenseField, c);
+        contentPane.add(vlicenseField);
+
+        c.gridwidth = GridBagConstraints.RELATIVE;
+        c.insets = new Insets(10, 10, 10, 0);
+        gb.setConstraints(dlicenseLabel, c);
+        contentPane.add(dlicenseLabel);
+
+        c.gridwidth = GridBagConstraints.REMAINDER;
+        c.insets = new Insets(10, 0, 10, 0);
+        gb.setConstraints(dlicenseField, c);
+        contentPane.add(dlicenseField);
+
+        c.gridwidth = GridBagConstraints.RELATIVE;
+        c.insets = new Insets(10, 10, 10, 0);
         gb.setConstraints(dateTimeReturendLabel, c);
         contentPane.add(dateTimeReturendLabel);
 
         c.gridwidth = GridBagConstraints.REMAINDER;
-        c.insets = new Insets(10, 10, 10, 0);
+        c.insets = new Insets(10, 0, 10, 0);
         gb.setConstraints(dateTimeReturnedField, c);
         contentPane.add(dateTimeReturnedField);
 
         c.gridwidth = GridBagConstraints.RELATIVE;
-        c.insets = new Insets(17, 10, 15, 0);
+        c.insets = new Insets(10, 10, 10, 0);
         gb.setConstraints(odometerReadingLabel, c);
         contentPane.add(odometerReadingLabel);
 
         c.gridwidth = GridBagConstraints.REMAINDER;
-        c.insets = new Insets(10, 10, 10, 0);
+        c.insets = new Insets(10, 0, 10, 0);
         gb.setConstraints(odometerReadingField, c);
         contentPane.add(odometerReadingField);
 
         c.gridwidth = GridBagConstraints.RELATIVE;
-        c.insets = new Insets(10, 0, 10, 0);
+        c.insets = new Insets(10, 10, 10, 0);
         gb.setConstraints(isTankFullLabel, c);
         contentPane.add(isTankFullLabel);
 
         c.gridwidth = GridBagConstraints.REMAINDER;
-        c.insets = new Insets(10, 10, 10, 0);
+        c.insets = new Insets(10, 0, 10, 0);
         gb.setConstraints(tankFullBox, c);
         contentPane.add(tankFullBox);
 
@@ -115,7 +141,7 @@ public class ReturningVehicleWindow extends JFrame implements ActionListener {
                         // displays success message with conf num from what reserve func returns
                         int totalCost = 0;
                         String cNum = "1234";
-                        delegate.returnVehicle(dateTimeReturnedField.getText(), Integer.parseInt(odometerReadingField.getText()), tankFullBox.isSelected());
+                        delegate.returnVehicle(vlicenseField.getText(), dlicenseField.getText(), dateTimeReturnedField.getText(), Integer.parseInt(odometerReadingField.getText()), tankFullBox.isSelected());
                         JOptionPane.showMessageDialog(new JFrame(), "You have successfully returned a vehicle!\n\nReceipt:" +
                                 "\nDate & Time Returned: " + dateTimeReturnedField.getText() +
                                 "\nTotal cost: " + totalCost +

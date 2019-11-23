@@ -415,6 +415,7 @@ public class DatabaseConnectionHandler {
         PreparedStatement ps3 = connection.prepareStatement("UPDATE Vehicle SET reserved = 1 WHERE vid = ?");
         ps3.setInt(1, vid);
         ps3.executeUpdate();
+        connection.commit();
     }
 
     public String findVehicles(ArrayList<String> criteria) {
@@ -435,7 +436,7 @@ public class DatabaseConnectionHandler {
 			ResultSet rs = stmt.executeQuery(sql);
 
 			while(rs.next()) {
-				count = rs.getInt(1);
+				count = Integer.parseInt(rs.getString(1));
 			}
 
 			rs.close();
@@ -593,33 +594,97 @@ public class DatabaseConnectionHandler {
 	public ColumnData[] generateDailyRentalReport() throws SQLException {
 		ColumnData[] toReturn = new ColumnData[3];
 		java.util.Date now = new java.util.Date();
-		String myDate = df.format(now);
 		String dateString = "%" + df.format(now) + "%";
 
-		PreparedStatement ps1 = connection.prepareStatement("SELECT v.vtname, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS NumVehiclesCategory " +
+		PreparedStatement ps1 = connection.prepareStatement("SELECT v.vtname AS Vehicle_Type, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS Number_Of_Vehicles " +
 				"FROM Rent r " +
 				"INNER JOIN Vehicle v ON v.vlicense = r.vlicense " +
-				"WHERE r.DATETIME LIKE ?" +
+				"WHERE r.FROMDATETIME LIKE ? " +
 				"GROUP BY v.vtname");
 		ps1.setString(1, dateString);
 		ResultSet vehiclePerCat = ps1.executeQuery();
 		ResultSetMetaData vehiclePerCatMetaData = vehiclePerCat.getMetaData();
 
-		String sql = "SELECT v.location, v.city, v.VTNAME, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS NumVehiclesBranch " +
+		String sql = "SELECT v.location, v.city, v.VTNAME AS Vehicle_Type, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS Number_Of_Vehicles " +
 				"FROM Rent r " +
 				"INNER JOIN Vehicle v ON v.vlicense = r.vlicense " +
-				"WHERE r.DATETIME LIKE ? " +
+				"WHERE r.FROMDATETIME LIKE ? " +
 				"GROUP BY v.location, v.city, v.VTNAME";
 		PreparedStatement ps2 = connection.prepareStatement(sql);
 		ps2.setString(1, dateString);
 		ResultSet rentalBranch = ps2.executeQuery();
 		ResultSetMetaData rentalBranchMetaData = rentalBranch.getMetaData();
 
-		sql = "SELECT CAST(COUNT(*) AS VARCHAR(100)) AS TotalRentalsAcrossCompany " +
+		sql = "SELECT CAST(COUNT(*) AS VARCHAR(100)) AS Total_Rentals_Across_Company " +
 				"FROM Rent r " +
-				"WHERE r.dateTime LIKE ?";
+				"WHERE r.FROMDATETIME LIKE ?";
 		PreparedStatement ps3 = connection.prepareStatement(sql);
 		ps3.setString(1, dateString);
+		ResultSet newRentalTotal = ps3.executeQuery();
+		ResultSetMetaData newRentalMetaData = newRentalTotal.getMetaData();
+
+		ResultSetMetaData[] allMetaData = {vehiclePerCatMetaData, rentalBranchMetaData, newRentalMetaData};
+		ResultSet[] allResults = {vehiclePerCat, rentalBranch, newRentalTotal};
+		for (int i = 0; i < 3; i++) {
+			int numColumns = allMetaData[i].getColumnCount();
+			String[] columnNames = new String[numColumns];
+			for (int j = 0; j < numColumns; j++) {
+				columnNames[j] = allMetaData[i].getColumnName(j+1);
+			}
+			ResultSet rs = allResults[i];
+			ArrayList<String[]> dataArr = new ArrayList<>();
+			while (rs.next()) {
+				String[] tuple = new String[numColumns];
+				for (int j = 0; j < numColumns; j++) {
+					tuple[j] = rs.getString(j+1);
+				}
+				dataArr.add(tuple);
+			}
+			ColumnData columnData = new ColumnData(columnNames, arrayListToStringArray(dataArr));
+			toReturn[i] = columnData;
+		}
+		ps1.close();
+		ps2.close();
+		ps3.close();
+		vehiclePerCat.close();
+		rentalBranch.close();
+		newRentalTotal.close();
+		return toReturn;
+	}
+
+	public ColumnData[] generateDailyReturnsReport() throws SQLException {
+		ColumnData[] toReturn = new ColumnData[3];
+		java.util.Date now = new java.util.Date();
+		String dateString = "%" + df.format(now) + "%";
+
+		PreparedStatement ps1 = connection.prepareStatement("SELECT v.vtname AS Vehicle_Type, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS Number_Of_Vehicles, SUM(re.value) AS Revenue " +
+				"FROM Return re " +
+				"INNER JOIN Rent r ON r.rid = re.rid " +
+				"INNER JOIN Vehicle v ON v.vlicense = r.vlicense " +
+				"WHERE r.FROMDATETIME LIKE ? " +
+				"GROUP BY v.vtname");
+		ps1.setString(1, "%2019%");
+		ResultSet vehiclePerCat = ps1.executeQuery();
+		ResultSetMetaData vehiclePerCatMetaData = vehiclePerCat.getMetaData();
+
+		String sql = "SELECT v.location, v.city, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS Number_Of_Vehicles, SUM(re.value) AS Revenue_Of_Branch " +
+				"FROM Return re " +
+				"INNER JOIN Rent r ON r.rid = re.rid " +
+				"INNER JOIN Vehicle v ON v.vlicense = r.vlicense " +
+				"WHERE r.FROMDATETIME LIKE ? " +
+				"GROUP BY v.location, v.city";
+		PreparedStatement ps2 = connection.prepareStatement(sql);
+		ps2.setString(1, "%2019%");
+		ResultSet rentalBranch = ps2.executeQuery();
+		ResultSetMetaData rentalBranchMetaData = rentalBranch.getMetaData();
+
+		sql = "SELECT CAST(COUNT(*) AS VARCHAR(100)) AS Number_Of_Vehicles, SUM(re.value) AS Grand_Total_Revenue " +
+				"FROM Return re " +
+				"INNER JOIN Rent r ON r.rid = re.rid " +
+				"INNER JOIN Vehicle v ON v.vlicense = r.vlicense " +
+				"WHERE r.FROMDATETIME LIKE ?";
+		PreparedStatement ps3 = connection.prepareStatement(sql);
+		ps3.setString(1, "%2019%");
 		ResultSet newRentalTotal = ps3.executeQuery();
 		ResultSetMetaData newRentalMetaData = newRentalTotal.getMetaData();
 
@@ -657,10 +722,10 @@ public class DatabaseConnectionHandler {
 		java.util.Date now = new java.util.Date();
 		String dateString = "%" + df.format(now) + "%";
 
-		PreparedStatement ps1 = connection.prepareStatement("SELECT v.vtname, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS NumVehiclesCategory " +
+		PreparedStatement ps1 = connection.prepareStatement("SELECT v.vtname AS Vehicle_Type, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS Number_Of_Vehicle " +
 				"FROM Rent r " +
 				"INNER JOIN Vehicle v ON v.vlicense = r.vlicense " +
-				"WHERE r.DATETIME LIKE ? AND v.CITY = ? AND v.LOCATION = ? " +
+				"WHERE r.FROMDATETIME LIKE ? AND v.CITY = ? AND v.LOCATION = ? " +
 				"GROUP BY v.vtname");
 		ps1.setString(1, dateString);
 		ps1.setString(2, city);
@@ -668,10 +733,10 @@ public class DatabaseConnectionHandler {
 		ResultSet vehiclePerCat = ps1.executeQuery();
 		ResultSetMetaData vehiclePerCatMetaData = vehiclePerCat.getMetaData();
 
-		PreparedStatement ps2 = connection.prepareStatement("SELECT v.location, v.city, v.VTNAME, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS NumVehiclesBranch " +
+		PreparedStatement ps2 = connection.prepareStatement("SELECT v.VTNAME AS Vehicle_Type, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS Number_Of_Vehicle " +
 				"FROM Rent r " +
 				"INNER JOIN Vehicle v ON v.vlicense = r.vlicense " +
-				"WHERE r.DATETIME LIKE ? AND v.CITY = ? AND v.LOCATION = ? " +
+				"WHERE r.FROMDATETIME LIKE ? AND v.CITY = ? AND v.LOCATION = ? " +
 				"GROUP BY v.location, v.city, v.VTNAME");
 		ps2.setString(1, dateString);
 		ps2.setString(2, city);
@@ -679,10 +744,10 @@ public class DatabaseConnectionHandler {
 		ResultSet rentalBranch = ps2.executeQuery();
 		ResultSetMetaData rentalBranchMetaData = rentalBranch.getMetaData();
 
-		PreparedStatement ps3 = connection.prepareStatement("SELECT CAST(COUNT(*) AS VARCHAR(100)) AS TotalRentalsFromBranch " +
+		PreparedStatement ps3 = connection.prepareStatement("SELECT CAST(COUNT(*) AS VARCHAR(100)) AS Total_Rentals_From_Branch " +
 				"FROM Rent r " +
 				"INNER JOIN Vehicle v ON v.vlicense = r.vlicense " +
-				"WHERE r.DATETIME LIKE ? AND v.CITY = ? AND v.LOCATION = ?");
+				"WHERE r.FROMDATETIME LIKE ? AND v.CITY = ? AND v.LOCATION = ?");
 		ps3.setString(1, dateString);
 		ps3.setString(2, city);
 		ps3.setString(3, location);
@@ -709,6 +774,75 @@ public class DatabaseConnectionHandler {
 			ColumnData columnData = new ColumnData(columnNames, arrayListToStringArray(dataArr));
 			toReturn[i] = columnData;
 		}
+		return toReturn;
+	}
+
+	public ColumnData[] generateDailyReturnsReportByBranch(String city, String location) throws SQLException {
+		ColumnData[] toReturn = new ColumnData[3];
+		java.util.Date now = new java.util.Date();
+		String dateString = "%" + df.format(now) + "%";
+
+		PreparedStatement ps1 = connection.prepareStatement("SELECT v.vtname AS Vehicle_Type, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS Number_Of_Vehicles, SUM(re.value) AS Revenue " +
+				"FROM Return re " +
+				"INNER JOIN Rent r ON r.rid = re.rid " +
+				"INNER JOIN Vehicle v ON v.vlicense = r.vlicense " +
+				"WHERE r.FROMDATETIME LIKE ? AND v.location = ? AND v.city = ? " +
+				"GROUP BY v.vtname");
+		ps1.setString(1, "%2019%");
+		ps1.setString(2, location);
+		ps1.setString(3, city);
+		ResultSet vehiclePerCat = ps1.executeQuery();
+		ResultSetMetaData vehiclePerCatMetaData = vehiclePerCat.getMetaData();
+
+		PreparedStatement ps2 = connection.prepareStatement("SELECT v.location, v.city, CAST(COUNT(v.vlicense) AS VARCHAR(100)) AS Number_Of_Vehicles, SUM(re.value) AS Revenue_Of_Branch " +
+				"FROM Return re " +
+				"INNER JOIN Rent r ON r.rid = re.rid " +
+				"INNER JOIN Vehicle v ON v.vlicense = r.vlicense " +
+				"WHERE r.FROMDATETIME LIKE ? AND v.location = ? AND v.city = ? " +
+				"GROUP BY v.location, v.city");
+		ps2.setString(1, "%2019%");
+		ps2.setString(2, location);
+		ps2.setString(3, city);
+		ResultSet rentalBranch = ps2.executeQuery();
+		ResultSetMetaData rentalBranchMetaData = rentalBranch.getMetaData();
+
+		PreparedStatement ps3 = connection.prepareStatement("SELECT CAST(COUNT(*) AS VARCHAR(100)) AS Number_Of_Vehicles, SUM(re.value) AS Grand_Total_Revenue_From_Branch " +
+				"FROM Return re " +
+				"INNER JOIN Rent r ON r.rid = re.rid " +
+				"INNER JOIN Vehicle v ON v.vlicense = r.vlicense " +
+				"WHERE r.FROMDATETIME LIKE ? AND v.location = ? AND v.city = ?");
+		ps3.setString(1, "%2019%");
+		ps3.setString(2, location);
+		ps3.setString(3, city);
+		ResultSet newRentalTotal = ps3.executeQuery();
+		ResultSetMetaData newRentalMetaData = newRentalTotal.getMetaData();
+
+		ResultSetMetaData[] allMetaData = {vehiclePerCatMetaData, rentalBranchMetaData, newRentalMetaData};
+		ResultSet[] allResults = {vehiclePerCat, rentalBranch, newRentalTotal};
+		for (int i = 0; i < 3; i++) {
+			int numColumns = allMetaData[i].getColumnCount();
+			String[] columnNames = new String[numColumns];
+			for (int j = 0; j < numColumns; j++) {
+				columnNames[j] = allMetaData[i].getColumnName(j+1);
+			}
+			ResultSet rs = allResults[i];
+			ArrayList<String[]> dataArr = new ArrayList<>();
+			while (rs.next()) {
+				String[] tuple = new String[numColumns];
+				for (int j = 0; j < numColumns; j++) {
+					tuple[j] = rs.getString(j+1);
+				}
+				dataArr.add(tuple);
+			}
+			ColumnData columnData = new ColumnData(columnNames, arrayListToStringArray(dataArr));
+			toReturn[i] = columnData;
+		}
+		ps1.close();
+		ps2.close();
+		ps3.close();
+		vehiclePerCat.close();
+		rentalBranch.close();
+		newRentalTotal.close();
 		return toReturn;
 	}
 

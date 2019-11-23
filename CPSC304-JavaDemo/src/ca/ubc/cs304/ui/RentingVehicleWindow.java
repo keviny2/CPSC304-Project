@@ -227,8 +227,8 @@ public class RentingVehicleWindow extends JFrame implements ActionListener {
                                                     "\nVehicle Type: " + vehicleTypeComboBox.getSelectedItem() +
                                                     "\nPick up date & time: " + fromDateTimeField.getText() +
                                                     "\nReturn date & time: " + toDateTimeField.getText(), "Success", JOptionPane.INFORMATION_MESSAGE);
+                                                    this.dispose();
                                         }
-                                        this.dispose();
                                     } else JOptionPane.showMessageDialog(new JFrame(), "Please enter your driver's license #", "Error", JOptionPane.ERROR_MESSAGE);
                                 } else JOptionPane.showMessageDialog(new JFrame(), "Please enter your full name", "Error", JOptionPane.ERROR_MESSAGE);
                             } else JOptionPane.showMessageDialog(new JFrame(), "Please enter the date & time rental will end", "Error", JOptionPane.ERROR_MESSAGE);
@@ -347,8 +347,8 @@ public class RentingVehicleWindow extends JFrame implements ActionListener {
                             JOptionPane.showMessageDialog(new JFrame(), "You have successfully rented a vehicle!\n\nReceipt: " +
                                     "\nConfirmation #: " + cNumField.getText() +
                                     "\nDriver's license #: " + CDLNField.getText(), "Success", JOptionPane.INFORMATION_MESSAGE);
+                                    rentReservedWindow.dispose();
                         }
-                        rentReservedWindow.dispose();
                     } else JOptionPane.showMessageDialog(new JFrame(), "Please enter your driver's license #", "Error", JOptionPane.ERROR_MESSAGE);
                 } else JOptionPane.showMessageDialog(new JFrame(), "Please enter your confirmation #", "Error", JOptionPane.ERROR_MESSAGE);
         }

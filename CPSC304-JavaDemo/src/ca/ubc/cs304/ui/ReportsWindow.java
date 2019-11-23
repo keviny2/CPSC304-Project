@@ -6,6 +6,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import ca.ubc.cs304.delegates.ReportsDelegate;
+import ca.ubc.cs304.model.ColumnData;
 
 public class ReportsWindow extends JFrame implements ActionListener {
 
@@ -180,8 +181,11 @@ public class ReportsWindow extends JFrame implements ActionListener {
         if (e.getActionCommand().equals("dailyRentals")) {
             delegate.dailyRentals();
         } else if (e.getActionCommand().equals("dailyRentalsBranch")) {
-            // TODO: @Ryan plug in city and location pls
-            delegate.dailyRentalsBranch("Akron", "OH");
+            delegate.dailyRentalsBranch(rentalsCityField.getText(), rentalsLocationField.getText());
+        } else if (e.getActionCommand().equals("dailyReturns")) {
+            delegate.dailyReturns();
+        } else if (e.getActionCommand().equals("dailyReturnsBranch")) {
+            delegate.dailyReturnsBranch(returnsCityField.getText(), returnsLocationField.getText());
         }
     }
 }
