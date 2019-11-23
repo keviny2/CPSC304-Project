@@ -4,6 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 
 import ca.ubc.cs304.delegates.ReturningVehicleDelegate;
 import ca.ubc.cs304.ui.utils.VehicleTypeNames;
@@ -139,16 +140,17 @@ public class ReturningVehicleWindow extends JFrame implements ActionListener {
                 if (!dateTimeReturnedField.getText().trim().equals("")) {
                     if (!odometerReadingField.getText().trim().equals("")) {
                         // displays success message with conf num from what reserve func returns
-                        int totalCost = 0;
-                        String cNum = "1234";
-                        delegate.returnVehicle(vlicenseField.getText(), dlicenseField.getText(), dateTimeReturnedField.getText(), Integer.parseInt(odometerReadingField.getText()), tankFullBox.isSelected());
-                        // This below is a success message along with a receipt, MAKE SURE TO RETURN CONFIRMATION IF IT EXISTS
-                        JOptionPane.showMessageDialog(new JFrame(), "You have successfully returned a vehicle!\n\nReceipt:" +
-                                "\nDate & Time Returned: " + dateTimeReturnedField.getText() +
-                                "\nTotal cost: " + totalCost +
-                                "\nHow cost: " + "enter how cost was calculated" +
-                                (cNum != null ? "\nReservation Confirmation #: " + cNum : ""), "Success", JOptionPane.INFORMATION_MESSAGE);
-                        this.dispose();
+                        ArrayList<String> returnInfo = delegate.returnVehicle(vlicenseField.getText(), dlicenseField.getText(), dateTimeReturnedField.getText(), Integer.parseInt(odometerReadingField.getText()), tankFullBox.isSelected());
+                        if(returnInfo.size() > 1){
+                            // This below is a success message along with a receipt, MAKE SURE TO RETURN CONFIRMATION IF IT EXISTS
+                            JOptionPane.showMessageDialog(new JFrame(), "You have successfully returned a vehicle!" +
+                                    "\n\nReceipt:" +
+                                    "\nDate & Time Returned: " + dateTimeReturnedField.getText() +
+                                    "\nTotal cost: " + returnInfo.get(1) +
+                                    "\nHow cost: " + "enter how cost was calculated" + returnInfo.get(2) +
+                                    "\nReservation Confirmation #: " + returnInfo.get(0), "Success", JOptionPane.INFORMATION_MESSAGE);
+                            this.dispose();
+                        }
                     } else
                         JOptionPane.showMessageDialog(new JFrame(), "Please enter the vehicle's odometer reading", "Error", JOptionPane.ERROR_MESSAGE);
                 } else

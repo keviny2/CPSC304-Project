@@ -150,7 +150,8 @@ public class DatabaseConnectionHandler {
 
 	public void isRented(String vlicense){
 		try {
-			PreparedStatement ps = connection.prepareStatement("SELECT COUNT(*) FROM Rent WHERE vlicense = ?");
+			PreparedStatement ps = connection.prepareStatement("SELECT * FROM Rent r, Vehicle v WHERE " +
+					"r.vlicense = v.vlicense and vlicense = ? and reserved = 1");
 			ps.setString(1, vlicense);
 			ResultSet rs = ps.executeQuery();
 
@@ -165,51 +166,52 @@ public class DatabaseConnectionHandler {
 	}
 
 	//retVal[0] = value, retVal[1] = howCalculate
-	public ArrayList<String> getRevenue(String vlicense, String dateTimeReturned){
+	public ArrayList<String> getRevenue(String vlicense, String dateTimeReturned) throws SQLException, ParseException{
 		ArrayList<String> retVal = new ArrayList<>();
-		try {
-			PreparedStatement ps = connection.prepareStatement("SELECT r.fromDateTime, vt.wrate, vt.drate, vt.hrate " +
-					"FROM Rent r, Vehicle v, VehicleTypes vt WHERE r.vlicense = v.vlicense and v.vtname = " +
-					"vt.vtname and v.vlicense = ?");
-			ps.setString(1, vlicense);
-			ResultSet rs = ps.executeQuery();
+		PreparedStatement ps = connection.prepareStatement("SELECT r.fromDateTime AS FromDateTime, vt.wrate AS Wrate" +
+				", vt.drate AS Drate, vt.hrate AS Hrate " +
+				"FROM Rent r, Vehicle v, VehicleTypes vt WHERE r.vlicense = v.vlicense and v.vtname = " +
+				"vt.vtname and v.vlicense = ?");
+		ps.setString(1, vlicense);
+		ResultSet rs = ps.executeQuery();
 
-			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-			LocalDate fromDate;
-			LocalDate toDate;
-			int wrate;
-			int drate;
-			int hrate;
-			if (rs.next()) {
-				fromDate = Timestamp.valueOf(rs.getString("fromDateTime")).toLocalDateTime().toLocalDate();
-				wrate = rs.getInt("wrate");
-				drate = rs.getInt("drate");
-				hrate = rs.getInt("hrate");
-			} else {
-				throw new SQLException("Error in computing value");
-			}
-			ps.close();
-			rs.close();
-
-			toDate = LocalDate.parse(dateTimeReturned, formatter);
-			if(fromDate.isAfter(toDate)){
-				throw new SQLException("Error in inputted date");
-			}
-
-			long weeks = ChronoUnit.WEEKS.between(fromDate, toDate);
-			long days = ChronoUnit.DAYS.between(fromDate,toDate);
-			long hours = days*24;
-
-			long value = weeks*wrate + days*drate + hours*hrate;
-			String howCalculate = "Calculated using: " + weeks + "(weeks)*" + wrate +
-					"(wrate) + " + days + "(days)*" + drate + "(drate) + " + hours + "(hours)*" +
-					hrate + "(hrate)";
-
-			retVal.add(Long.toString(value));
-			retVal.add(howCalculate);
-		} catch (SQLException e) {
-			rollbackConnection();
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		LocalDate fromDate;
+		LocalDate toDate;
+		int wrate;
+		int drate;
+		int hrate;
+		if (rs.next()) {
+			String temp = rs.getString("FromDateTime");
+			temp = dateFormat.format(dateFormat.parse(temp));
+			formatter = formatter.withLocale( Locale.CANADA );  // Locale specifies human language for translating, and cultural norms for lowercase/uppercase and abbreviations and such. Example: Locale.US or Locale.CANADA_FRENCH
+			fromDate = LocalDate.parse(temp, formatter);
+			wrate = rs.getInt("Wrate");
+			drate = rs.getInt("Drate");
+			hrate = rs.getInt("Hrate");
+		} else {
+			throw new SQLException("Error in computing value");
 		}
+		ps.close();
+		rs.close();
+
+		toDate = LocalDate.parse(dateTimeReturned, formatter);
+		if(fromDate.isAfter(toDate)){
+			throw new SQLException("Invalid date interval");
+		}
+
+		long weeks = ChronoUnit.WEEKS.between(fromDate, toDate);
+		long days = ChronoUnit.DAYS.between(fromDate,toDate);
+		long hours = days*24;
+
+		long value = weeks*wrate + days*drate + hours*hrate;
+		String howCalculate = "Calculated using: " + weeks + "(weeks)*" + wrate +
+				"(wrate) + " + days + "(days)*" + drate + "(drate) + " + hours + "(hours)*" +
+				hrate + "(hrate)";
+
+		retVal.add(Long.toString(value));
+		retVal.add(howCalculate);
 		return retVal;
 	}
 
@@ -250,11 +252,10 @@ public class DatabaseConnectionHandler {
 		}
 	}
 
-	public void updateRent(int rid, String dateTimeReturned) {
+	public void updateVehicle(String vlicense) {
 		try {
-			PreparedStatement ps = connection.prepareStatement("UPDATE Rent SET toDateTime = ? WHERE rid = ?");
-			ps.setString(1, dateTimeReturned);
-			ps.setInt(2, rid);
+			PreparedStatement ps = connection.prepareStatement("UPDATE Vehicle SET reserved = 0 WHERE vlicense = ?");
+			ps.setString(1, vlicense);
 			ps.executeUpdate();
 			connection.commit();
 			ps.close();
