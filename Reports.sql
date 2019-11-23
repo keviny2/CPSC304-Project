@@ -61,7 +61,7 @@ GROUP BY v.vtname
 -- for the number of vehicles and revenue per branch, and the grand totals for the day.
 
 -- number vehicles and revenue per category
-SELECT COUNT(v.vlicense) AS NumVehiclesCategory, SUM(re.value) AS CategoryRevenue
+SELECT v.vtname, COUNT(v.vlicense) AS NumVehiclesCategory, SUM(re.value) AS CategoryRevenue
 FROM [Return] re
 INNER JOIN Rent r ON r.rid = re.rid
 INNER JOIN Vehicle v ON v.vlicense = r.vlicense

@@ -8,6 +8,9 @@ import oracle.sql.DATE;
 
 import javax.swing.*;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 
 public class Reports implements ReportsDelegate {
     private DatabaseConnectionHandler dbHandler = null;
@@ -44,10 +47,19 @@ public class Reports implements ReportsDelegate {
     }
 
     public void dailyReturns() {
-
+        //retObj[numVehiclesAndRevenuePerCat, subNumVehicleAndRevPerBranch, grandTotals, allVehicles]
+        ArrayList<ArrayList<String>> retObj = new ArrayList<>();
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String currDateTime = dtf.format(LocalDateTime.now());
+        //gotta figure out how to pass in date and only compare yyyy-mm-dd
+        dbHandler.dailyReturns("2020-04-27");
     }
 
     public void dailyReturnsBranch(String city, String location) {
-
+        //retObj[numVehiclesAndRevenuePerCat, subNumVehicleAndRevPerBranch, grandTotals, allVehicles]
+        ArrayList<ArrayList<String>> retObj = new ArrayList<>();
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String currDateTime = dtf.format(LocalDateTime.now());
+        dbHandler.dailyReturnsBranch(currDateTime, location, city);
     }
 }

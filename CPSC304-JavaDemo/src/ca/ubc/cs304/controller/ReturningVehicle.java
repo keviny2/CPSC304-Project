@@ -29,7 +29,7 @@ public class ReturningVehicle implements ReturningVehicleDelegate {
         ArrayList<String> returnInfo = new ArrayList<>();
         try {
             dbHandler.isRented(vlicense); //Check if the vehicle is rented
-            ArrayList<String> retVal = dbHandler.getValue(vlicense, dateTimeReturned); //retVal has value and howCalculated
+            ArrayList<String> retVal = dbHandler.getRevenue(vlicense, dateTimeReturned); //retVal has value and howCalculated
             if(retVal.size() < 1){
                 throw new SQLException("Error computing value");
             }
@@ -37,6 +37,7 @@ public class ReturningVehicle implements ReturningVehicleDelegate {
             String howCalculate = retVal.get(1);
             int rid = dbHandler.getReturnId(vlicense);
             dbHandler.returnVehicle(rid, dateTimeReturned, odometerReading, isTankFull, value); //Insert into table
+            dbHandler.updateRent(rid,dateTimeReturned);
             returnInfo.add(0, Integer.toString(rid));
             returnInfo.add(1, dateTimeReturned);
             returnInfo.add(2, Integer.toString(value));

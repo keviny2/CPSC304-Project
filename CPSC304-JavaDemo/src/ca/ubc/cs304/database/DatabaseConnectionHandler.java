@@ -2,16 +2,17 @@ package ca.ubc.cs304.database;
 
 import ca.ubc.cs304.model.BranchModel;
 import ca.ubc.cs304.model.ColumnData;
-import oracle.sql.TIMESTAMP;
 
-import javax.xml.transform.Result;
 import java.sql.*;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
 
 /**
  * This class handles all database related transactions
@@ -247,7 +248,8 @@ public class DatabaseConnectionHandler {
 		}
 	}
 
-	public ArrayList<String> getValue(String vlicense, String dateTimeReturned){
+	//retVal[0] = value, retVal[1] = howCalculate
+	public ArrayList<String> getRevenue(String vlicense, String dateTimeReturned){
 		ArrayList<String> retVal = new ArrayList<>();
 		try {
 			PreparedStatement ps = connection.prepareStatement("SELECT r.fromDateTime, vt.wrate, vt.drate, vt.hrate " +
@@ -330,6 +332,186 @@ public class DatabaseConnectionHandler {
 		} catch (SQLException e) {
 			rollbackConnection();
 		}
+	}
+
+	public void updateRent(int rid, String dateTimeReturned) {
+		try {
+			PreparedStatement ps = connection.prepareStatement("UPDATE Rent SET toDateTime = ? WHERE rid = ?");
+			ps.setString(1, dateTimeReturned);
+			ps.setInt(2, rid);
+			ps.executeUpdate();
+			connection.commit();
+			ps.close();
+		} catch (SQLException e) {
+			rollbackConnection();
+		}
+	}
+
+	public ArrayList<ArrayList<String>> dailyReturns(String currDateTime) {
+		ArrayList<ArrayList<String>> retObj = new ArrayList<>();
+		try {
+			//number vehicles and revenue per category
+			DateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
+			Date now = format.parse(currDateTime);
+			String dateString = "%" + df.format(now) + "%";
+			PreparedStatement ps = connection.prepareStatement("SELECT v.vtname AS Vtname, COUNT(v.vlicense) AS " +
+					"NumVehiclesCategory, SUM(re.value) AS CategoryRevenue FROM \"RETURN\" re INNER JOIN Rent r ON r.rid = re.rid INNER " +
+					"JOIN Vehicle v ON v.vlicense = r.vlicense WHERE re.dateTime LIKE ? GROUP BY v.vtname");
+			ps.setString(1, dateString);
+			ResultSet rs = ps.executeQuery();
+
+			ArrayList<String> numVehiclesAndRevenuePerCat = new ArrayList<>();
+			while (rs.next()) {
+				numVehiclesAndRevenuePerCat.add(rs.getString("Vtname"));
+				numVehiclesAndRevenuePerCat.add(Integer.toString(rs.getInt("NumVehiclesCategory")));
+				numVehiclesAndRevenuePerCat.add(Integer.toString(rs.getInt("CategoryRevenue")));
+			}
+			ps.close();
+			rs.close();
+
+			//subtotals for number of vehicles and revenue per branch
+			PreparedStatement ps2 = connection.prepareStatement("SELECT v.location AS Location, v.city AS City, COUNT(v.vlicense) " +
+					"AS NumVehiclesCategory, SUM(re.value) AS BranchRevenue" +
+					"FROM \"RETURN\" re INNER JOIN Rent r ON r.rid = re.rid INNER JOIN Vehicle v ON v.vlicense = r.vlicense" +
+					"WHERE re.dateTime = ? GROUP BY v.location, v.city");
+			ps.setString(1, currDateTime);
+			ResultSet rs2 = ps2.executeQuery();
+
+			ArrayList<String> subNumVehicleAndRevPerBranch = new ArrayList<>();
+			while (rs.next()) {
+				subNumVehicleAndRevPerBranch.add(rs2.getString("Location"));
+				subNumVehicleAndRevPerBranch.add(rs2.getString("City"));
+				subNumVehicleAndRevPerBranch.add(Integer.toString(rs2.getInt("NumVehiclesCategory")));
+				numVehiclesAndRevenuePerCat.add(Integer.toString(rs2.getInt("BranchRevenue")));
+			}
+			ps.close();
+			rs.close();
+
+			//grand totals for the day
+			PreparedStatement ps3 = connection.prepareStatement("SELECT COUNT(rid) AS NumVehicles, SUM(value) AS TotalRevenue" +
+					"FROM \"RETURN\" WHERE dateTime = ?");
+			ps.setString(1, currDateTime);
+			ResultSet rs3 = ps3.executeQuery();
+
+			ArrayList<String> grandTotals = new ArrayList<>();
+			while (rs.next()) {
+				grandTotals.add(rs3.getString("NumVehicles"));
+				grandTotals.add(rs3.getString("TotalRevenue"));
+			}
+			ps.close();
+			rs.close();
+
+			//info on all vehicles
+			PreparedStatement ps4 = connection.prepareStatement("SELECT re.rid AS Rid, re.dateTime AS DateTime, re.odometer" +
+					"AS Odometer, re.fullTank as FullTank, re.value AS Value FROM \"RETURN\" re INNER JOIN Rent r ON r.rid " +
+					"= re.rid INNER JOIN Vehicle v ON v.vlicense = r.vlicense WHERE re.dateTime = ? GROUP BY v.location," +
+					"v.city, v.vtname");
+			ps.setString(1, currDateTime);
+			ResultSet rs4 = ps4.executeQuery();
+
+			ArrayList<String> allVehicles = new ArrayList<>();
+			while (rs.next()) {
+				allVehicles.add(Integer.toString(rs4.getInt("Rid")));
+				allVehicles.add(rs4.getString("DateTime"));
+				allVehicles.add(Float.toString(rs4.getFloat("Odometer")));
+				allVehicles.add(Float.toString(rs4.getFloat("FullTank")));
+				allVehicles.add(Integer.toString(rs4.getInt("Value")));
+			}
+			ps.close();
+			rs.close();
+
+			retObj.add(numVehiclesAndRevenuePerCat);
+			retObj.add(subNumVehicleAndRevPerBranch);
+			retObj.add(grandTotals);
+			retObj.add(allVehicles);
+
+		} catch (SQLException | ParseException e) {
+			rollbackConnection();
+		}
+		return retObj;
+	}
+
+	public ArrayList<ArrayList<String>> dailyReturnsBranch(String currDateTime, String location, String city) {
+		ArrayList<ArrayList<String>> retObj = new ArrayList<>();
+		try {
+			//number vehicles and revenue per category
+			PreparedStatement ps = connection.prepareStatement("SELECT v.vtname AS Vtname, COUNT(v.vlicense) AS NumVehiclesCategory, SUM(re.value) FROM \"RETURN\" re INNER JOIN Rent r ON r.rid = re.rid INNER JOIN Vehicle v ON v.vlicense = r.vlicense WHERE re.dateTime = ? and v.location = ? and v.city = ? GROUP BY v.vtname");
+			ps.setString(1, currDateTime);
+			ps.setString(2, location);
+			ps.setString(3, city);
+			ResultSet rs = ps.executeQuery();
+
+			ArrayList<String> numVehiclesAndRevenuePerCat = new ArrayList<>();
+			while (rs.next()) {
+				numVehiclesAndRevenuePerCat.add(rs.getString("Vtname"));
+				numVehiclesAndRevenuePerCat.add(Integer.toString(rs.getInt("NumVehiclesCategory")));
+				numVehiclesAndRevenuePerCat.add(Integer.toString(rs.getInt("CategoryRevenue")));
+			}
+			ps.close();
+			rs.close();
+
+			//subtotals for number of vehicles and revenue per branch
+			PreparedStatement ps2 = connection.prepareStatement("SELECT v.location AS Location, v.city AS City, COUNT(v.vlicense) " +
+					"AS NumVehiclesCategory, SUM(re.value) AS BranchRevenue" +
+					"FROM \"RETURN\" re INNER JOIN Rent r ON r.rid = re.rid INNER JOIN Vehicle v ON v.vlicense = r.vlicense" +
+					"WHERE re.dateTime = ? and v.location = ? and v.city = ? GROUP BY v.location, v.city");
+			ps.setString(1, currDateTime);
+			ps.setString(2, location);
+			ps.setString(3, city);
+			ResultSet rs2 = ps.executeQuery();
+
+			ArrayList<String> subNumVehicleAndRevPerBranch = new ArrayList<>();
+			while (rs.next()) {
+				subNumVehicleAndRevPerBranch.add(rs.getString("Location"));
+				subNumVehicleAndRevPerBranch.add(rs.getString("City"));
+				subNumVehicleAndRevPerBranch.add(Integer.toString(rs.getInt("NumVehiclesCategory")));
+				numVehiclesAndRevenuePerCat.add(Integer.toString(rs.getInt("BranchRevenue")));
+			}
+			ps.close();
+			rs.close();
+
+			//grand totals for the day
+			PreparedStatement ps3 = connection.prepareStatement("SELECT COUNT(rid) AS NumVehicles, SUM(value) AS TotalRevenue" +
+					"FROM \"RETURN\" WHERE dateTime = ?");
+			ps.setString(1, currDateTime);
+			ResultSet rs3 = ps.executeQuery();
+
+			ArrayList<String> grandTotals = new ArrayList<>();
+			while (rs.next()) {
+				grandTotals.add(rs.getString("NumVehicles"));
+				grandTotals.add(rs.getString("TotalRevenue"));
+			}
+			ps.close();
+			rs.close();
+
+			//info on all vehicles
+			PreparedStatement ps4 = connection.prepareStatement("SELECT re.rid AS Rid, re.dateTime AS DateTime, re.odometer" +
+					"AS Odometer, re.fullTank as FullTank, re.value AS Value FROM \"RETURN\" re INNER JOIN Rent r ON r.rid " +
+					"= re.rid INNER JOIN Vehicle v ON v.vlicense = r.vlicense WHERE re.dateTime = ? GROUP BY v.location," +
+					"v.city, v.vtname");
+			ps.setString(1, currDateTime);
+			ResultSet rs4 = ps.executeQuery();
+
+			ArrayList<String> allVehicles = new ArrayList<>();
+			while (rs.next()) {
+				allVehicles.add(Integer.toString(rs.getInt("Rid")));
+				allVehicles.add(rs.getString("DateTime"));
+				allVehicles.add(Float.toString(rs.getFloat("Odometer")));
+				allVehicles.add(Float.toString(rs.getFloat("FullTank")));
+				allVehicles.add(Integer.toString(rs.getInt("Value")));
+			}
+			ps.close();
+			rs.close();
+
+			retObj.add(numVehiclesAndRevenuePerCat);
+			retObj.add(subNumVehicleAndRevPerBranch);
+			retObj.add(grandTotals);
+			retObj.add(allVehicles);
+
+		} catch (SQLException e) {
+			rollbackConnection();
+		}
+		return retObj;
 	}
 
 	public void doRentalNoReservation(String location, String vehicleType, String fromDate,
