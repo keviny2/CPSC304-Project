@@ -23,8 +23,10 @@ public class SuperRent {
 //        ReturningVehicle returningVehicle = new ReturningVehicle(dbHandler);
 //        returningVehicle.start();
 //        login.requestFocus();
-        Reports reports = new Reports(dbHandler);
-        reports.start();
+//        Reports reports = new Reports(dbHandler);
+//        reports.start();
+        ManipulateDatabase manipulateDatabase = new ManipulateDatabase(dbHandler);
+        manipulateDatabase.start();
     }
 
 }

@@ -12,6 +12,8 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * This class handles all database related transactions
@@ -862,43 +864,34 @@ public class DatabaseConnectionHandler {
 	// ASSUMES: all items in args are formatted properly (i.e. String are like 'string', integer are like 0) AND
 	// assumes tableName is NOT formatted (i.e. no quotes)
 	// Returns true if successful, false otherwise
-	public boolean insertDataIntoTable(String tableName, String... args) {
-		try {
-			String sql = "INSERT INTO " + tableName + " VALUES (";
-			for (int i = 0; i < args.length; i++) {
-				sql += args[i] + ",";
-			}
-			sql += ")";
-			Statement stmt = connection.createStatement();
-			stmt.executeUpdate(sql);
-			connection.commit();
-			stmt.close();
-		} catch (SQLException e) {
-			return false;
-		}
+	public boolean insertDataIntoTable(String tableName, String values) throws SQLException {
+		String sql = "INSERT INTO " + tableName + " VALUES (";
+		sql += values + ")";
+		Statement stmt = connection.createStatement();
+		stmt.executeUpdate(sql);
+		connection.commit();
+		stmt.close();
 		return true;
 	}
 
 	// ASSUMES: args are formatted like "vid = 123" or "name = 'Kohl'" as appropriate
 	// assumes tableName is NOT formatted (i.e. No quotes)
-	public boolean deleteDataFromTable(String tableName, String... args) {
-		try {
-			String sql = "DELETE FROM " + tableName;
-			for (int i = 0; i < args.length; i++) {
-				if (i == 0) {
-					sql += " WHERE";
-				} else {
-					sql += " AND";
-				}
-				sql += " " + args[i];
+	public boolean deleteDataFromTable(String tableName, String conditions) throws SQLException {
+		String sql = "DELETE FROM " + tableName;
+		List<String> conditionList = Arrays.asList(conditions.split(","));
+
+		for (int i = 0; i < conditionList.size(); i++) {
+			if (i == 0) {
+				sql += " WHERE";
+			} else {
+				sql += " AND";
 			}
-			Statement stmt = connection.createStatement();
-			stmt.executeUpdate(sql);
-			connection.commit();
-			stmt.close();
-		} catch (SQLException e) {
-			return false;
+			sql += " " + conditionList.get(i);
 		}
+		Statement stmt = connection.createStatement();
+		stmt.executeUpdate(sql);
+		connection.commit();
+		stmt.close();
 		return true;
 	}
 
