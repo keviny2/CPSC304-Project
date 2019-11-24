@@ -113,7 +113,7 @@ public class DatabaseConnectionHandler {
 
 			addCardNumberToCards(cardNumber);
 
-            ps = connection.prepareStatement("INSERT INTO Rent VALUES (?,?,?,?,?,?,?,?,?)");
+            ps = connection.prepareStatement("INSERT INTO Rent VALUES (?,?,?,?,?,?,?,?,?,1)");
 			ps.setInt(1, rid);
 			rid++;
 			ps.setString(2, vlicense);
@@ -166,13 +166,14 @@ public class DatabaseConnectionHandler {
 	}
 
 	//retVal[0] = value, retVal[1] = howCalculate
-	public ArrayList<String> getRevenue(String vlicense, String dateTimeReturned) throws SQLException, ParseException{
+	public ArrayList<String> getRevenue(String vlicense, String dateTimeReturned, String dLicense) throws SQLException, ParseException{
 		ArrayList<String> retVal = new ArrayList<>();
 		PreparedStatement ps = connection.prepareStatement("SELECT r.fromDateTime AS FromDateTime, vt.wrate AS Wrate" +
 				", vt.drate AS Drate, vt.hrate AS Hrate " +
 				"FROM Rent r, Vehicle v, VehicleTypes vt WHERE r.vlicense = v.vlicense and v.vtname = " +
-				"vt.vtname and v.vlicense = ?");
+				"vt.vtname and v.vlicense = ? and r.DLICENSE = ?");
 		ps.setString(1, vlicense);
+		ps.setString(2, dLicense);
 		ResultSet rs = ps.executeQuery();
 
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -201,9 +202,14 @@ public class DatabaseConnectionHandler {
 			throw new SQLException("Invalid date interval");
 		}
 
-		long weeks = ChronoUnit.WEEKS.between(fromDate, toDate);
+//		long weeks = ChronoUnit.WEEKS.between(fromDate, toDate);
+//		long days = ChronoUnit.DAYS.between(fromDate,toDate);
+//		long hours = days*24;
+
 		long days = ChronoUnit.DAYS.between(fromDate,toDate);
-		long hours = days*24;
+		long weeks = days / 7;
+		days = days % 7;
+		long hours = 0;
 
 		long value = weeks*wrate + days*drate + hours*hrate;
 		String howCalculate = "Calculated using: " + weeks + "(weeks)*" + wrate +
@@ -244,9 +250,14 @@ public class DatabaseConnectionHandler {
 			throw new SQLException("Invalid date interval");
 		}
 
-		long weeks = ChronoUnit.WEEKS.between(fromDate, toDate);
+//		long weeks = ChronoUnit.WEEKS.between(fromDate, toDate);
+//		long days = ChronoUnit.DAYS.between(fromDate,toDate);
+//		long hours = days*24;
+
 		long days = ChronoUnit.DAYS.between(fromDate,toDate);
-		long hours = days*24;
+		long weeks = days / 7;
+		days = days % 7;
+		long hours = 0;
 
 		long value = weeks*wrate + days*drate + hours*hrate;
 		String howCalculate = "Calculated using: " + weeks + "(weeks)*" + wrate +
@@ -497,13 +508,13 @@ public class DatabaseConnectionHandler {
             rid = (rid == 0) ? getRid() : rid;
             Date now = new Date(new java.util.Date().getTime());
 
-            ps = connection.prepareStatement("INSERT INTO Rent(RID,VLICENSE,DLICENSE,DATETIME,FROMDATETIME,TODATETIME,ODOMETER,CARDNO,CONFNO) " +
-                    "VALUES (?,?,?,?,?,?,?,?,?)");
+            ps = connection.prepareStatement("INSERT INTO Rent(RID,VLICENSE,DLICENSE,DATETIME,FROMDATETIME,TODATETIME,ODOMETER,CARDNO,CONFNO,RETURNED) " +
+                    "VALUES (?,?,?,?,?,?,?,?,?,0)");
             ps.setInt(1, rid);
             rid++;
             ps.setString(2, vlicense);
             ps.setString(3, dlNumber);
-			ps.setString(4, now.toString());
+			ps.setString(4, df.format(now));
 			ps.setString(5, fromDate);
 			ps.setString(6, toDate);
 			ps.setInt(7, odometer);
@@ -826,7 +837,7 @@ public class DatabaseConnectionHandler {
 				"INNER JOIN Vehicle v ON v.vlicense = r.vlicense " +
 				"WHERE r.FROMDATETIME LIKE ? " +
 				"GROUP BY v.vtname");
-		ps1.setString(1, "%2019%");
+		ps1.setString(1, dateString);
 		ResultSet vehiclePerCat = ps1.executeQuery();
 		ResultSetMetaData vehiclePerCatMetaData = vehiclePerCat.getMetaData();
 
@@ -837,7 +848,7 @@ public class DatabaseConnectionHandler {
 				"WHERE r.FROMDATETIME LIKE ? " +
 				"GROUP BY v.location, v.city";
 		PreparedStatement ps2 = connection.prepareStatement(sql);
-		ps2.setString(1, "%2019%");
+		ps2.setString(1, dateString);
 		ResultSet rentalBranch = ps2.executeQuery();
 		ResultSetMetaData rentalBranchMetaData = rentalBranch.getMetaData();
 
@@ -847,7 +858,7 @@ public class DatabaseConnectionHandler {
 				"INNER JOIN Vehicle v ON v.vlicense = r.vlicense " +
 				"WHERE r.FROMDATETIME LIKE ?";
 		PreparedStatement ps3 = connection.prepareStatement(sql);
-		ps3.setString(1, "%2019%");
+		ps3.setString(1, dateString);
 		ResultSet newRentalTotal = ps3.executeQuery();
 		ResultSetMetaData newRentalMetaData = newRentalTotal.getMetaData();
 

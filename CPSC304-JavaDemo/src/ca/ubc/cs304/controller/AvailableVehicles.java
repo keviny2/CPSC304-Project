@@ -60,8 +60,10 @@ public class AvailableVehicles implements AvailableVehiclesDelegate {
 			criteria.add("location = \'" + location + "\'");
 		}
 		String[][] data = dbHandler.getVehicles(criteria);
-		if (data.length == 0 || data[0].length == 0 || data[0][0] == "") {
-			JOptionPane.showMessageDialog(new JFrame(), "Invalid query", "Error", JOptionPane.ERROR_MESSAGE);
+		if (data.length == 0 || data[0].length == 0) {
+			JOptionPane.showMessageDialog(new JFrame(), "No vehicles to show.", "Error", JOptionPane.ERROR_MESSAGE);
+		} else if (data[0][0] == "") {
+			JOptionPane.showMessageDialog(new JFrame(), "Invalid query.", "Error", JOptionPane.ERROR_MESSAGE);
 		}
 
 		// create new table with above data

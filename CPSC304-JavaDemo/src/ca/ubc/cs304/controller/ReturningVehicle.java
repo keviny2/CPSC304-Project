@@ -28,7 +28,7 @@ public class ReturningVehicle implements ReturningVehicleDelegate {
         ArrayList<String> returnInfo = new ArrayList<>();
         try {
             dbHandler.isRented(vlicense); //Check if the vehicle is rented
-            ArrayList<String> retVal = dbHandler.getRevenue(vlicense, dateTimeReturned); //retVal has value and howCalculated
+            ArrayList<String> retVal = dbHandler.getRevenue(vlicense, dateTimeReturned, dlicense); //retVal has value and howCalculated
             int value = Integer.parseInt(retVal.get(0));
             String howCalculate = retVal.get(1);
             int rid = dbHandler.getReturnId(vlicense);
