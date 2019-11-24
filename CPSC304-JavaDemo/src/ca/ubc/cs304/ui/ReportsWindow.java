@@ -187,15 +187,14 @@ public class ReportsWindow extends JFrame implements ActionListener {
         } else if (e.getActionCommand().equals("dailyReturnsBranch")) {
             delegate.dailyReturnsBranch(returnsCityField.getText(), returnsLocationField.getText());
         }
-        if (e.getActionCommand().equals("dailyRentalsBranch")) {
-            delegate.dailyRentals();
-        }
-        if (e.getActionCommand().equals("dailyReturns")) {
-            delegate.dailyReturns();
-        }if (e.getActionCommand().equals("dailyReturnsBranch")) {
-            delegate.dailyRentals();
-        }
-
+//        if (e.getActionCommand().equals("dailyRentalsBranch")) {
+//            delegate.dailyRentals();
+//        }
+//        if (e.getActionCommand().equals("dailyReturns")) {
+//            delegate.dailyReturns();
+//        }if (e.getActionCommand().equals("dailyReturnsBranch")) {
+//            delegate.dailyRentals();
+//        }
     }
 }
 
