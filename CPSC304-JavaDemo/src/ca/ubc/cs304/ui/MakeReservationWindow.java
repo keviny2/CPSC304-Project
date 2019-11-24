@@ -4,6 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 
 import ca.ubc.cs304.delegates.MakeReservationDelegate;
 import ca.ubc.cs304.ui.utils.VehicleTypeNames;
@@ -177,8 +178,15 @@ public class MakeReservationWindow extends JFrame implements ActionListener {
                                     if (!customerDLField.getText().trim().equals("")) {
                                         // displays success message with conf num from what reserve func returns
                                         int confNum = delegate.reserve(locationField.getText(), (String) vehicleTypeComboBox.getSelectedItem(), fromDateTimeField.getText(), toDateTimeField.getText(), customerNameField.getText(), Long.parseLong(customerDLField.getText()));
+                                        ArrayList<String> estimation = delegate.getEstimation((String) vehicleTypeComboBox.getSelectedItem(), fromDateTimeField.getText(), toDateTimeField.getText());
                                         if (confNum != -1) {
-                                            JOptionPane.showMessageDialog(new JFrame(), "You have reserved a vehicle!\n\nHere is your confirmation number: " + confNum, "Success", JOptionPane.INFORMATION_MESSAGE);
+                                            String message = "You have reserved a vehicle!\n\nHere is your confirmation" +
+                                                    " number: " + confNum + "\n\nLocation: " + locationField.getText() + "" +
+                                                    "\n\nVehicle Type: " + vehicleTypeComboBox.getSelectedIndex() + "\n\nFrom: " +
+                                                    fromDateTimeField.getText() + "\n\nTo: " + toDateTimeField.getText() + "" +
+                                                    "\n\nCost Estimation: " + estimation.get(0);
+
+                                            JOptionPane.showMessageDialog(new JFrame(), message, "Success", JOptionPane.INFORMATION_MESSAGE);
                                         }
                                         // this.dispose();
                                     } else JOptionPane.showMessageDialog(new JFrame(), "Please enter your driver's license #", "Error", JOptionPane.ERROR_MESSAGE);

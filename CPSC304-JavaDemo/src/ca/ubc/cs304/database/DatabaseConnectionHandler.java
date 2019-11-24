@@ -215,6 +215,49 @@ public class DatabaseConnectionHandler {
 		return retVal;
 	}
 
+	public ArrayList<String> getEstimation(String vtname, String fromDatep, String toDatep) throws SQLException, ParseException{
+		ArrayList<String> retVal = new ArrayList<>();
+		PreparedStatement ps = connection.prepareStatement("SELECT wrate AS Wrate" +
+				", drate AS Drate, hrate AS Hrate " +
+				"FROM VehicleTypes WHERE " +
+				"vtname = ?");
+		ps.setString(1, vtname);
+		ResultSet rs = ps.executeQuery();
+
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+		LocalDate fromDate = LocalDate.parse(fromDatep, formatter);
+		LocalDate toDate = LocalDate.parse(toDatep, formatter);
+		int wrate;
+		int drate;
+		int hrate;
+		if (rs.next()) {
+			wrate = rs.getInt("Wrate");
+			drate = rs.getInt("Drate");
+			hrate = rs.getInt("Hrate");
+		} else {
+			throw new SQLException("Error in computing value");
+		}
+		ps.close();
+		rs.close();
+
+		if(fromDate.isAfter(toDate)){
+			throw new SQLException("Invalid date interval");
+		}
+
+		long weeks = ChronoUnit.WEEKS.between(fromDate, toDate);
+		long days = ChronoUnit.DAYS.between(fromDate,toDate);
+		long hours = days*24;
+
+		long value = weeks*wrate + days*drate + hours*hrate;
+		String howCalculate = "Calculated using: " + weeks + "(weeks)*" + wrate +
+				"(wrate) + " + days + "(days)*" + drate + "(drate) + " + hours + "(hours)*" +
+				hrate + "(hrate)";
+
+		retVal.add(Long.toString(value));
+		retVal.add(howCalculate);
+		return retVal;
+	}
+
 	public int getReturnId(String vlicense){
 		int rid = -1;
 		try {

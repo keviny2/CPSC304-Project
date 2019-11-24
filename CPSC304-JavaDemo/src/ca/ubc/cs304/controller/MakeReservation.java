@@ -7,6 +7,7 @@ import ca.ubc.cs304.ui.MakeReservationWindow;
 import javax.swing.*;
 import java.sql.Date;
 import java.sql.SQLException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Objects;
 
@@ -39,5 +40,15 @@ public class MakeReservation implements MakeReservationDelegate {
             return -1;
         }
         return dbHandler.reserveVehicle(location, vehicleType, fromDateTime, toDateTime, customerName, customerDL);
+    }
+
+    public ArrayList<String> getEstimation(String vtname, String fromDate, String toDate){
+        ArrayList<String> result = new ArrayList<>();
+        try{
+            result = dbHandler.getEstimation(vtname, fromDate, toDate);
+        } catch (SQLException | ParseException e) {
+            JOptionPane.showMessageDialog(new JFrame(), "Cannot get Estimation", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+        return result;
     }
 }
