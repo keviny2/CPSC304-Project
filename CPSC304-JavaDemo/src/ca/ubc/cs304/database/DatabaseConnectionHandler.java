@@ -148,10 +148,10 @@ public class DatabaseConnectionHandler {
 		}
 	}
 
-	public void isRented(String vlicense){
+	public void isRented(String vlicense) throws SQLException {
 		try {
 			PreparedStatement ps = connection.prepareStatement("SELECT * FROM Rent r, Vehicle v WHERE " +
-					"r.vlicense = v.vlicense and vlicense = ? and reserved = 1");
+					"r.vlicense = v.vlicense and v.vlicense = ? and v.reserved = 1");
 			ps.setString(1, vlicense);
 			ResultSet rs = ps.executeQuery();
 
@@ -161,7 +161,8 @@ public class DatabaseConnectionHandler {
 			ps.close();
 			rs.close();
 		} catch (SQLException e) {
-			rollbackConnection();
+//			rollbackConnection();
+			throw e;
 		}
 	}
 
