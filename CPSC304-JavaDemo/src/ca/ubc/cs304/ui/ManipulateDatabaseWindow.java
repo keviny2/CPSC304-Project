@@ -35,7 +35,7 @@ public class ManipulateDatabaseWindow extends JFrame implements ActionListener {
         JLabel valuesLabel = new JLabel("VALUES(");
         JLabel valuesLabel2 = new JLabel(")");
         JLabel conditionsLabel = new JLabel("Conditions (WHERE): ");
-        JLabel conditionsLabel2 = new JLabel("i.e. id = '10', name = 'John'");
+        JLabel conditionsLabel2 = new JLabel("i.e. id = 10, name = 'John'");
 
         tableListLabel.setFont(new Font(viewTableNameLabel.getFont().getFontName(), Font.BOLD, viewTableNameLabel.getFont().getSize()));
         viewTableLabel.setFont(new Font(viewTableNameLabel.getFont().getFontName(), Font.BOLD, viewTableNameLabel.getFont().getSize()));
