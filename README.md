@@ -7,6 +7,4 @@ Instructions for the TA's:
 Note: Make sure our loading window closes before our navigation window opens, if it doesn't it means that the database was not connected.
 
 Contributors:
-Kohl Peterson
-Kevin Yang
-Ryan Lee
+Kohl Peterson, Kevin Yang, Ryan Lee
